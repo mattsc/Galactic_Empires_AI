@@ -77,7 +77,15 @@ local GEAI_cfg = {
         hq = 1,
         planet = 1,
         ships = 1
-    }
+    },
+
+    -- Upgrades:
+    -- Do not spend more than this fraction of the turn starting gold on upgrades:
+    upgrade_gold_fraction = 0.25,
+    -- Do not buy upgrade if gold remaining after is less than:
+    upgrade_gold_remaining = 30,
+    -- Do not install upgrades before this turn:
+    upgrade_first_turn = 2
 }
 
 local GEAI_config = {}

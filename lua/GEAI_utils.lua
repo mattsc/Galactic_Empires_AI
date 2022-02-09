@@ -20,7 +20,6 @@ function GEAI_utils.reset_vars(data)
 
     data.turn = wesnoth.current.turn
     data.turn_start_gold = wesnoth.sides[wesnoth.current.side].gold
-    data.upgrades_n = 0
     data.upgrades_gold = 0
     data.done_recruiting = false
 end

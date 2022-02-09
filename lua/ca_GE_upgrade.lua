@@ -40,12 +40,24 @@ function ca_GE_upgrade:evaluation(cfg, data)
     end
 
 
-    -- If we have already installed at least one upgrade, and have spent more
-    -- than 30% of the starting gold, we're done.
+    -- Install upgrades up to certain limits (see GEAI_config.lua for details)
     -- Essential upgrades are installed up to this limit. Only one non-essential
     -- upgrade is installed each turn. This is done by setting data.upgrades_gold
     -- to greater than data.turn_start_gold if a non-essential upgrade is installed.
-    if (data.upgrades_n > 0) and (data.upgrades_gold >= 0.3 * data.turn_start_gold) then
+    local upgrade_gold_fraction = CFG.get_cfg_parm('upgrade_gold_fraction')
+    local upgrade_gold_remaining = CFG.get_cfg_parm('upgrade_gold_remaining')
+    local upgrade_first_turn = CFG.get_cfg_parm('upgrade_first_turn')
+    --std_print('upgrade_gold_fraction: ' .. upgrade_gold_fraction)
+    --std_print('upgrade_gold_remaining: ' .. upgrade_gold_remaining)
+    --std_print('upgrade_first_turn: ' .. upgrade_first_turn)
+
+    local available_gold = math.min(
+       upgrade_gold_fraction * data.turn_start_gold,
+       wesnoth.sides[wesnoth.current.side].gold - upgrade_gold_remaining
+    )
+    --std_print('available_gold: ' .. available_gold .. '/' .. wesnoth.sides[wesnoth.current.side].gold)
+
+    if (data.upgrades_gold >= available_gold) or (wesnoth.current.turn < upgrade_first_turn) then
         DBG.print_debug_eval(ca_name, 0, start_time, 'reached limit of upgrades to be installed this turn')
         return 0
     end
@@ -153,7 +165,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for hq_upgrade,cost in pairs(all_upgrades.hq) do
             local is_available = UPGRD.show_item(hq_upgrade)
 
-            if is_available and (cost <= wesnoth.sides[wesnoth.current.side].gold) then
+            if is_available and (cost <= available_gold) then
                 local hq_rating = 4 -- base rating for HQ upgrades
 
                 if (hq_upgrade == 'autofix_hq') and (hq.hitpoints < hq.max_hitpoints) then
@@ -201,16 +213,17 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     hq_rating = hq_rating - 1e6
                 end
 
+                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
+                local is_essential = hq_rating > 10
+
                 -- if this is the homeworld, multiply rating by 10
-                if (planet.variables.colonised == 'homeworld') then
+                if is_essential and (planet.variables.colonised == 'homeworld') then
                     hq_rating = hq_rating * 10
                 end
 
-                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
-                local is_essential = hq_rating > 10
                 hq_rating = hq_rating + minor_rating + math.random() / 100
 
-                --std_print(string.format('  %20s  %3dg  %8.3f', hq_upgrade, cost, hq_rating))
+                --std_print(string.format(UTLS.unit_str(hq) ..' %20s  %3dg  %8.3f  %s', hq_upgrade, cost, hq_rating, tostring(is_essential)))
                 if (hq_rating > max_rating) then
                     max_rating = hq_rating
                     best_upgrade = {
@@ -253,7 +266,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
 
-            if is_available and (cost <= wesnoth.sides[wesnoth.current.side].gold) then
+            if is_available and (cost <= available_gold) then
                 local planet_rating = 6 -- base rating for planet upgrades
 
                 -- Bonus for defensive upgrades
@@ -317,16 +330,17 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                 end
 
+                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
+                local is_essential = planet_rating > 10
+
                 -- if this is the homeworld, multiply rating by 10
-                if (planet.variables.colonised == 'homeworld') then
+                if is_essential and (planet.variables.colonised == 'homeworld') then
                     planet_rating = planet_rating * 10
                 end
 
-                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
-                local is_essential = planet_rating > 10
                 planet_rating = planet_rating + minor_rating + math.random() / 100
 
-                --std_print(string.format('  %20s  %3dg  %8.3f', planet_upgrade, cost, planet_rating))
+                --std_print(string.format(UTLS.unit_str(planet) ..' %20s  %3dg  %8.3f  %s', planet_upgrade, cost, planet_rating, tostring(is_essential)))
                 if (planet_rating > max_rating) then
                     max_rating = planet_rating
                     best_upgrade = {
@@ -406,7 +420,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for ship_upgrade,cost in pairs(all_upgrades.ship) do
             local is_available = UPGRD.show_item(ship_upgrade, true)
 
-            if is_available and (cost <= wesnoth.sides[wesnoth.current.side].gold) then
+            if is_available and (cost <= available_gold) then
                 local ship_rating = 2 -- base rating for ship upgrades
 
                 if ship:matches { ability = 'transport' } then
@@ -465,20 +479,21 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     then
                         ship_rating = ship_rating + 100
                     end
-
-                    -- Multiply by 10 for flagship
-                    ship_rating = ship_rating * 10
                 end
 
                 -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
                 local is_essential = ship_rating > 10
+
+                if is_essential and ship:matches { ability = 'flagship' } then
+                    ship_rating = ship_rating * 10
+                end
 
                 local minor_rating_ship = ship.level
                 --std_print('minor_rating_ship ' .. UTLS.unit_str(ship) .. ': ' .. minor_rating_ship)
 
                 ship_rating = ship_rating + minor_rating_ship + math.random() / 100
 
-                --std_print(string.format('  %20s  %3dg  %9.4f', ship_upgrade, cost, ship_rating))
+                --std_print(string.format(UTLS.unit_str(ship) .. ' %20s  %3dg  %9.4f  %s', ship_upgrade, cost, ship_rating, tostring(is_essential)))
                 if (ship_rating > max_rating) then
                     max_rating = ship_rating
                     best_upgrade = {
@@ -534,7 +549,7 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
         best_upgrade.y = unit.y
     end
 
-    local str = best_upgrade.utype .. ': ' .. UTLS.unit_str(unit) .. ' with ' .. best_upgrade.utype .. ' (' .. best_upgrade.cost .. ' gold)'
+    local str = best_upgrade.utype .. ': ' .. UTLS.unit_str(unit) .. ' with ' .. best_upgrade.utype .. ' (' .. best_upgrade.cost .. '/' .. wesnoth.sides[wesnoth.current.side].gold .. ' gold)'
     DBG.print_debug_exec(ca_name, str)
     UTLS.output_add_move(str)
 
@@ -543,9 +558,7 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
 
     wesnoth.sync.invoke_command('GEAI_buy_upgrade', best_upgrade)
 
-    -- Set the variables that count how many upgrades are installed,
-    -- and how much gold has been spent on that
-    data.upgrades_n = data.upgrades_n + 1
+    -- Set the variables that count how much gold has been spent on upgrades
     if best_upgrade.is_essential then
         data.upgrades_gold = data.upgrades_gold + best_upgrade.cost
     else
