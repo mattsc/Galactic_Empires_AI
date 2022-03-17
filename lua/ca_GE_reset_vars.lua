@@ -14,6 +14,13 @@ function ca_GE_reset_vars:evaluation()
 end
 
 function ca_GE_reset_vars:execution(cfg, data)
+    -- Debug use only: set controller to 'human' at beginning of turn.
+    -- This can be used to get control of a game saved from a replay for trouble shooting.
+    if false then
+        wesnoth.sides[wesnoth.current.side].controller = 'human'
+        UTLS.force_gamestate_change(ai)
+    end
+
     --DBG.dbms(data, false, 'data before')
     UTLS.reset_vars(data)
     --DBG.dbms(data, false, 'data after')
