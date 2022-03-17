@@ -138,9 +138,17 @@ function ca_GE_move_ground:evaluation(cfg, data)
             local food, gold = UTLS.food_and_gold(hex[1], hex[2])
             --std_print('  ' .. UTLS.loc_str(hex) .. ': ' .. food .. ' food, ' .. gold .. ' gold')
 
-            -- Hexes adjacent to the HQ 2 a penalty, as new citizens are only produced on those
+            -- Hexes adjacent to the HQ get a penalty, as new citizens are only produced on those
             if (wesnoth.map.distance_between(hq.x, hq.y, hex[1], hex[2]) == 1) then
                 food = (food or 0) - 0.75
+            end
+
+            -- Beam-down hexes also get a penalty, as units can be auto-killed by enemies beaming down on them there
+            local dirs = { 'n', 'ne', 'se', 's', 'sw', 'nw' }
+            for _,dir in ipairs(dirs) do
+                if (hex[1] == planet.variables[dir .. '_x']) and (hex[2] == planet.variables[dir .. '_y']) then
+                    food = (food or 0) - 0.5
+                end
             end
 
             GM.set_value(hex_info_map, hex[1], hex[2], 'food', food)
