@@ -30,6 +30,28 @@ local function get_beam_down_loc(planet, transport)
 end
 
 
+local function add_combat_rating(available_units)
+    -- Set combat rating for units, including bonus by population type
+    for _,unit_infos in pairs(available_units) do
+        for _,unit_info in pairs(unit_infos) do
+            local rating = 1 + unit_info.power / 1000
+
+            -- Since transports heal, and injured units cannot work or do science,
+            -- prefer injured units. Note that unit power is reduced when they are
+            -- injured, so this contribution needs to be stronger than that
+            rating = rating + unit_info.hp_missing / 100
+
+            if (unit_info.type == 'combat_unit') then
+                rating = rating * 1.5
+            elseif (unit_info.type == 'science_unit') then
+                rating = rating * 1.2
+            end
+            unit_info.rating = rating
+        end
+    end
+end
+
+
 local function add_available_unit(available_units, container_id, unit)
     -- Add a unit to the @available_units array, together with its power and population type
     -- @container_id: the id of the unit that currently contains @unit (can be a planet or a transport)
@@ -306,7 +328,24 @@ local function find_assignments(assignments, transports, instructions, planets_b
 
             instructions.n_assigned = instructions.n_assigned + 1
         else
-            dist_ratings = {}
+            break
+        end
+
+        -- If 'stop_when_enough_power' directive is given, stop assigning transports
+        -- when enough power has been assigned to each planet.
+        -- This is currently only used for the defend_homeworld purpose
+        if instructions.stop_when_enough_power then
+            local enough_power = true
+            for planet_id,power_needed in pairs(instructions.power_needed) do
+                local power_assigned = instructions.power_assigned[planet_id] or 0
+                if (power_assigned < power_needed) then
+                    enough_power = false
+                    break
+                end
+            end
+            if enough_power then
+                break
+            end
         end
     end
 end
@@ -324,6 +363,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     assignments = {}
+    local instructions = {}
 
     --- Transports ---
     local all_transports = UTLS.get_transports { side = wesnoth.current.side }
@@ -338,7 +378,6 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     -- Some assigned transports might not have valid goals any more, but
     -- that is purpose dependent and therefore checked later
     local assigned_transports, unassigned_transports = {}, {}
-    local instructions = {}
     for _,transport in pairs(all_transports) do
         local purpose = transport.variables.GEAI_purpose
         if purpose then
@@ -349,12 +388,18 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             table.insert(unassigned_transports, transport)
         end
     end
+    --for purpose,transports in pairs(assigned_transports) do
+    --    for _,transport in ipairs(transports) do
+    --        std_print(purpose, 'assigned transport: ' .. UTLS.unit_str(transport) .. ' -> ' .. transport.variables.GEAI_goal_id)
+    --    end
+    --end
     --for _,transport in ipairs(unassigned_transports) do std_print('unassigned transport: ' .. UTLS.unit_str(transport)) end
 
 
     --- Planets ---
     local all_planets = UTLS.get_planets()
     local neutral_planets, enemy_planets, planets_by_id = {}, {}, {}
+    local homeworld
     local n_sides = 0 -- number of sides which own a planet
     for _,planet in ipairs(all_planets) do
         if planet:matches {
@@ -367,12 +412,53 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         elseif wesnoth.sides.is_enemy(planet.side, wesnoth.current.side) then
             table.insert(enemy_planets, planet)
         end
-        if (planet.variables.colonised == 'homeworld') then n_sides = n_sides + 1 end
+        if (planet.variables.colonised == 'homeworld') then
+            if (planet.side == wesnoth.current.side) then homeworld = planet end
+            n_sides = n_sides + 1
+        end
         planets_by_id[planet.id] = planet
     end
     --std_print('#neutral_planets', #neutral_planets)
     --std_print('#enemy_planets', #enemy_planets)
     --std_print('n_sides', n_sides)
+
+
+    -- Check whether an invasion of the AI homeworld is imminent
+    -- Consider transports within 2 moves of the homeworld
+    local enemy_transports = AH.get_attackable_enemies { ability = 'transport' }
+    --std_print('#enemy_transports: ' .. #enemy_transports)
+
+    local homeworld_threats_power = 0
+    for _,enemy_transport in ipairs(enemy_transports) do
+        local dist = wesnoth.map.distance_between(enemy_transport.x, enemy_transport.y, homeworld.x, homeworld.y)
+        --std_print(UTLS.unit_str(enemy_transport), dist)
+
+        -- Don't do path finding if the transport can definitely not get there
+        if (dist - 1 <= enemy_transport.max_moves * 2) then
+            for xa,ya in H.adjacent_tiles(homeworld.x, homeworld.y) do
+                -- ignore units, as some defenders may be killed by enemy ships
+                local _,cost = wesnoth.paths.find_path(enemy_transport, xa, ya, { ignore_units = true })
+                --std_print('  ' .. UTLS.loc_str({ xa, ya }), cost)
+
+                -- If the transport can get to the homeworld in 2 moves, find the power of its passengers
+                -- Note that onboard healing is not taken into account here, but this is close enough
+                if (cost <= enemy_transport.max_moves * 2) then
+                    local passengers = wml.array_access.get('passengers', enemy_transport)
+                    for _,passenger in ipairs(passengers) do
+                        local enemy = wesnoth.units.find_on_recall { id = passenger.id }[1]
+                        local power = UTLS.unit_power(enemy)
+                        --std_print('    ' .. UTLS.unit_str(enemy), power)
+                        homeworld_threats_power = homeworld_threats_power + power
+                    end
+
+                    -- we're only interested in whether the transport can get there, not in which one is the closest hex
+                    -- also needed so that units are not double-counted
+                    break
+                end
+            end
+        end
+    end
+    --std_print('homeworld_threats_power: ' .. homeworld_threats_power)
 
 
     --- Troops ---
@@ -429,8 +515,16 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             end
         end
         planet_powers[planet.id] = { enemy = enemy_power, own = my_power }
-        --std_print('  my vs. enemy power: ' .. my_power .. ' <--> ' .. enemy_power)
+        --std_print(planet.id .. ': my vs. enemy power: ' .. my_power .. ' <--> ' .. enemy_power)
         --DBG.dbms(my_units_this_planet, false, 'my_units_this_planet')
+
+
+        -- Also add the external (units on transports) threats
+        if (planet.id == homeworld.id) then
+            planet_powers[planet.id].threats = homeworld_threats_power
+            -- And this done is so that no units are marked as available below if the AI homeworld is threatened
+            enemy_power = enemy_power + homeworld_threats_power
+        end
 
         -- Available units on planets:
         --  - if there are enemies on the planet, we do not move any of ours away
@@ -438,7 +532,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         --  - in addition, we keep a certain number of units on the homeworld
         if (enemy_power == 0) and (#my_units_this_planet > 0) then
             local keep_units = {}
-            if (planet.variables.colonised == 'homeworld') then
+            if (planet.id == homeworld.id) then
                 --std_print('is homeworld: ' .. planet.id, #my_units_this_planet, #neutral_planets)
                 -- Allow units for colonising (note that this is intentionally
                 -- larger than what is actually assigned below)
@@ -487,6 +581,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         end
     end
     --DBG.dbms(instructions.available_units, false, 'instructions.available_units')
+    --DBG.dbms(planet_powers, false, 'planet_powers')
 
     -- Also calculate the total number and combined power of available units on each planet
     local n_available_units = 0
@@ -593,6 +688,69 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
     end
     ------ End recruiting ------
+
+
+    ------ Defend the AI homeworld ------
+    -- If we urgently need power at the homeworld, everything else is second priority
+    local homeworld_power_own = planet_powers[homeworld.id].own
+    local homeworld_power_enemy = planet_powers[homeworld.id].enemy + planet_powers[homeworld.id].threats
+    local homeworld_power_needed = 1.5 * homeworld_power_enemy - homeworld_power_own
+    --std_print('Homeworld own power:             ' .. homeworld_power_own)
+    --std_print('Homeworld enemy power + threats: ' .. homeworld_power_enemy)
+    --std_print('Homeworld power needed:          ' .. homeworld_power_needed)
+
+    if (homeworld_power_needed > 0) then
+        instructions.purpose = 'defend_homeworld'
+        instructions.power_needed = {}
+        instructions.power_needed[homeworld.id] = homeworld_power_needed
+        instructions.n_assigned = 0
+        instructions.n_needed = math.huge -- for defending the homeworld, we always assign as many transports as needed
+        instructions.stop_when_enough_power = true
+
+        add_combat_rating(instructions.available_units)
+
+        -- First we check whether the already assigned transports provide enough power
+        for _,transport in ipairs(assigned_transports.defend_homeworld or {}) do
+            local goal_id = transport.variables.GEAI_goal_id
+            local pickup_id = transport.variables.GEAI_pickup_id
+            if (goal_id == homeworld.id)
+                and ((not pickup_id) or instructions.available_units[pickup_id])
+            then
+                set_assignment(assignments, instructions, transport.id, goal_id, pickup_id)
+            end
+        end
+        --DBG.dbms(assignments, false, 'assignments defend_homeworld existing')
+        --DBG.dbms(instructions, false, 'instructions')
+
+        homeworld_power_assigned = instructions.power_assigned and instructions.power_assigned[homeworld.id] or 0
+        homeworld_power_missing = homeworld_power_needed - homeworld_power_assigned
+        --std_print('Homeworld power assigned:        ' .. homeworld_power_assigned)
+        --std_print('Homeworld power missing:         ' .. homeworld_power_missing)
+
+        if (homeworld_power_missing > 0) then
+            -- If there is power missing at the homeworld, we unassigned all other transports
+            -- and assign transports to defending the homeworld as the highest priority
+            -- In fact, given that things might have changed, we also erase previous assignments
+            -- for defending the homeworld in order to find the optimum solution for the current situation
+
+            for purpose,transports in pairs(assigned_transports) do
+                for _,transport in ipairs(transports) do
+                    --std_print(purpose, 'assigned transport: ' .. UTLS.unit_str(transport) .. ' -> ' .. transport.variables.GEAI_goal_id)
+                    table.insert(unassigned_transports, transport)
+                end
+            end
+            assigned_transports = {}
+
+            find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
+        end
+    end
+    --DBG.dbms(assignments, false, 'assignments defend_homeworld')
+    --DBG.dbms(instructions, false, 'instructions defend_homeworld')
+
+    if (assignments.defend_homeworld) and (assignments.defend_homeworld[1]) then
+        DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.defend_homeworld .. ' transports found for defending the homeworld')
+        return ca_score
+    end
 
 
     ------ Colonise neutral planets ------
@@ -707,24 +865,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     instructions.n_assigned = 0
     instructions.n_needed = math.huge -- for combat, we always assign all transports
 
-    -- Add combat bonus by population type
-    for _,unit_infos in pairs(instructions.available_units) do
-        for _,unit_info in pairs(unit_infos) do
-            local rating = 1 + unit_info.power / 1000
-
-            -- Since transports heal, and injured units cannot work or do science,
-            -- prefer injured units. Note that unit power is reduced when they are
-            -- injured, so this contribution needs to be stronger than that
-            rating = rating + unit_info.hp_missing / 100
-
-            if (unit_info.type == 'combat_unit') then
-                rating = rating * 1.5
-            elseif (unit_info.type == 'science_unit') then
-                rating = rating * 1.2
-            end
-            unit_info.rating = rating
-        end
-    end
+    add_combat_rating(instructions.available_units)
 
     --DBG.dbms(planet_powers, false, 'planet_powers')
     for planet_id,powers in pairs(planet_powers) do
