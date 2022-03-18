@@ -13,6 +13,7 @@ local ca_name = 'transport_troops'
 --local ca_name = 'retreat_space'
 --local ca_name = 'space_combat'
 --local ca_name = 'flagship'
+--local ca_name = 'ground_combat'
 --------------------------------------------------------------------------------
 
 local GEAI_manual_mode = {}
