@@ -439,7 +439,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             max_alien_power = math.max(max_alien_power, power)
         end
     end
-    std_print('max_alien_power: ' .. max_alien_power)
+    --std_print('max_alien_power: ' .. max_alien_power)
 
 
     -- Check whether an invasion of the AI homeworld is imminent
@@ -1093,8 +1093,22 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                 and (wesnoth.map.distance_between(goal_planet.x, goal_planet.y, transport.x, transport.y) ~= 1)
             then
                 local min_rating, best_hex = math.huge, {}
+
+                -- If there are artifact or aliens on the planet, try to beam down close to them
+                local artifact_locs = UTLS.get_artifact_locs {
+                    x = goal_planet.variables.hq_x,
+                    y = goal_planet.variables.hq_y,
+                    radius = goal_planet.variables.radius
+                }
+                --std_print('#artifact_locs: ' .. #artifact_locs)
+
+                local aliens = wesnoth.units.find_on_map { race = 'alien', role = goal_planet.id }
+                --std_print('#aliens: ' .. #aliens)
+
                 for xa,ya in H.adjacent_tiles(goal_planet.x, goal_planet.y) do
                     local _,cost = wesnoth.paths.find_path(transport, xa, ya)
+                    local can_reach = (cost <= transport.moves)
+                    --std_print(xa,ya,can_reach)
 
                     -- if there's a unit on it, significantly increase the cost
                     if wesnoth.units.get(xa, ya) then
@@ -1124,6 +1138,26 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     end
                     --std_print(UTLS.loc_str(xa, ya), direction, UTLS.loc_str(beam_loc), penalty)
                     cost = cost + penalty
+
+                    -- The following are only applied to hexes the transport can reach
+                    -- As such, they only work if they are boni, but they still need to be
+                    -- in units of moves; we do that by simply adding an arbitrary large bonus
+                    -- (negative cost) which applies equally to all hexes that can be reached
+                    if can_reach then
+                        -- Try to get close to artifact
+                        for _,artifact_loc in ipairs(artifact_locs) do
+                            local dist = wesnoth.map.distance_between(beam_loc[1], beam_loc[2], artifact_loc[1], artifact_loc[2])
+                            -- Transport may go a bit more than a move farther for each move saved on the surface
+                            cost = cost + 1.5 * dist - 10
+                        end
+
+                        -- Same for aliens, with a slightly smaller contribution
+                        for _,alien in ipairs(aliens) do
+                            local dist = wesnoth.map.distance_between(beam_loc[1], beam_loc[2], alien.x, alien.y)
+                            -- Transport may go a bit more than a move farther for each move saved on the surface
+                            cost = cost + 1.4 * dist - 10
+                        end
+                    end
 
                     if (cost < min_rating) then
                         min_rating = cost
