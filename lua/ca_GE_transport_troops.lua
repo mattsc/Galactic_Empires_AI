@@ -764,9 +764,17 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         local max_alien_power = 1
         local aliens = wesnoth.units.find_on_map { race = 'alien', { 'not', { ability = 'friendly' } } }
         for _,alien in ipairs(aliens) do
-            local power = UTLS.unit_power(alien)
-            --std_print('alien: ' .. UTLS.unit_str(alien), power)
-            max_alien_power = math.max(max_alien_power, power)
+            local planet = UTLS.get_planet_from_unit(alien)
+            if planet:matches {
+                    { 'filter_side', {  -- this excludes neutral planets
+                        { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
+                    } }
+                }
+            then
+                local power = UTLS.unit_power(alien)
+                --std_print('alien: ' .. UTLS.unit_str(alien), power, planet.id)
+                max_alien_power = math.max(max_alien_power, power)
+            end
         end
         --std_print('max_alien_power: ' .. max_alien_power)
 
