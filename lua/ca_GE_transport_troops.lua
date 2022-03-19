@@ -423,6 +423,25 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     --std_print('n_sides', n_sides)
 
 
+    -- Find hostile aliens on neutral planets
+    local max_alien_power = 0
+    local aliens = wesnoth.units.find_on_map { race = 'alien', { 'not', { ability = 'friendly' } } }
+    for _,alien in ipairs(aliens) do
+        local planet = UTLS.get_planet_from_unit(alien)
+        if planet:matches {
+                { 'filter_side', {  -- this excludes neutral planets
+                    { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
+                } }
+            }
+        then
+            local power = UTLS.unit_power(alien)
+            --std_print('alien: ' .. UTLS.unit_str(alien), power, planet.id)
+            max_alien_power = math.max(max_alien_power, power)
+        end
+    end
+    std_print('max_alien_power: ' .. max_alien_power)
+
+
     -- Check whether an invasion of the AI homeworld is imminent
     -- Consider transports within 2 moves of the homeworld
     local enemy_transports = AH.get_attackable_enemies { ability = 'transport' }
@@ -565,8 +584,11 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 for i_u = 1,math.min(#workers, n_workers) do
                     keep_units[workers[i_u].id] = true
                 end
-                for i_u = 1,math.min(#fighters, n_fighters) do
-                    keep_units[fighters[i_u].id] = true
+                -- Don't hold back fighters if there are hostile aliens on uncolonised planets
+                if (max_alien_power == 0) then
+                    for i_u = 1,math.min(#fighters, n_fighters) do
+                        keep_units[fighters[i_u].id] = true
+                    end
                 end
             end
             --DBG.dbms(keep_units, false, 'keep_units')
@@ -760,27 +782,9 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         instructions.power_needed = {}
         instructions.n_assigned = 0
 
-        -- Find hostile aliens
-        local max_alien_power = 1
-        local aliens = wesnoth.units.find_on_map { race = 'alien', { 'not', { ability = 'friendly' } } }
-        for _,alien in ipairs(aliens) do
-            local planet = UTLS.get_planet_from_unit(alien)
-            if planet:matches {
-                    { 'filter_side', {  -- this excludes neutral planets
-                        { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
-                    } }
-                }
-            then
-                local power = UTLS.unit_power(alien)
-                --std_print('alien: ' .. UTLS.unit_str(alien), power, planet.id)
-                max_alien_power = math.max(max_alien_power, power)
-            end
-        end
-        --std_print('max_alien_power: ' .. max_alien_power)
-
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
-            instructions.power_needed[planet.id] = max_alien_power
+            instructions.power_needed[planet.id] = math.max(max_alien_power, 1)
         end
 
         local artifact_locs = UTLS.get_artifact_locs()
@@ -826,6 +830,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             end
         end
         --DBG.dbms(instructions, false, 'instructions')
+        --DBG.dbms(instructions.available_units, false, 'instructions.available_units')
 
         -- First, set the assignments for already-assigned transports
         -- Unassign those whose goal is not valid any more:
