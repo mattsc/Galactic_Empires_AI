@@ -778,10 +778,9 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         end
         --std_print('max_alien_power: ' .. max_alien_power)
 
-        -- For colonising, we just need any unit
+        -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
-            -- divide max_alien_power by 2, otherwise too few transports will be sent out
-            instructions.power_needed[planet.id] = max_alien_power / 2
+            instructions.power_needed[planet.id] = max_alien_power
         end
 
         local artifact_locs = UTLS.get_artifact_locs()
