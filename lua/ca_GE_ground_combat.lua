@@ -1,7 +1,7 @@
 ----- CA: ground_combat -----
 --
 -- Description:
---   At the moment this only covers attacks on aliens, so that they happen
+--   Attacks on aliens and alien headquarters, so that they happen
 --   after attacks on enemy-side units, which are done by the default combat CA
 --
 --   Note: we do not exclude friendly aliens, as this CA is what takes care of
@@ -30,6 +30,18 @@ function ca_GE_ground_combat:evaluation(cfg, data, ai_debug)
         { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
     }
     --std_print('#aliens: ' .. #aliens)
+
+    -- Also add alien HQs, but add them at the end of the array. As enemies are dealt with
+    -- in order in which they appear, aliens will be attacked first, then alien HQs.
+    local hqs = UTLS.get_headquarters {
+        { 'filter_side', {  -- this excludes neutral planets
+            { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
+        } }
+    }
+    --std_print('#hqs: ' .. #hqs)
+    for _,hq in ipairs(hqs) do table.insert(aliens, hq) end
+    --std_print('#aliens: ' .. #aliens)
+
 
     -- Just go through the aliens one by one and execute attacks as they are found, the order does not matter
     for _,alien in ipairs(aliens) do
