@@ -33,7 +33,7 @@ function ca_GE_ground_combat:evaluation(cfg, data, ai_debug)
 
     -- Just go through the aliens one by one and execute attacks as they are found, the order does not matter
     for _,alien in ipairs(aliens) do
-        local attackers = AH.get_units_with_moves {
+        local attackers = AH.get_units_with_attacks {
             side = wesnoth.current.side,
             role = alien.role,
             { 'not', { has_weapon = 'food' }}
