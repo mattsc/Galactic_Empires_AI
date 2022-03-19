@@ -1204,11 +1204,12 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                         UTLS.force_gamestate_change(ai)
                     end
 
-                    -- This designates the end of this assignment --> delete all remaining unit variables
-                    -- A new assignment will be issued in the next call to transport_troops
-                    wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_goal_id' })
-                    wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_purpose' })
                 end
+
+                -- This designates the end of this assignment --> delete all remaining unit variables
+                -- A new assignment will be issued in the next call to transport_troops
+                wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_goal_id' })
+                wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_purpose' })
             end
         end
     end
