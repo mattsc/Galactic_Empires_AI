@@ -1247,12 +1247,14 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                             break
                         end
                     end
-                end
 
-                -- This designates the end of this assignment --> delete all remaining unit variables
-                -- A new assignment will be issued in the next call to transport_troops
-                wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_goal_id' })
-                wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_purpose' })
+                    -- This designates the end of this assignment --> delete all remaining unit variables
+                    -- A new assignment will be issued in the next call to transport_troops
+                    -- Important: this needs to be inside the unit 'for' loop, because there is a 'break' up there
+                    -- that might end the loop without changing the gamestate, resulting in an infinite loop
+                    wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_goal_id' })
+                    wesnoth.sync.invoke_command('GEAI_set_unit_variable', { id = transport.id, name = 'GEAI_purpose' })
+                end
             end
         end
     end
