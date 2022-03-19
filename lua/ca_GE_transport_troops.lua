@@ -1204,6 +1204,15 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                         UTLS.force_gamestate_change(ai)
                     end
 
+                    -- If this is for colonising and there are no aliens on the planet,
+                    -- we only need to beam down one unit
+                    if (purpose == 'colonise') then
+                        local aliens = wesnoth.units.find_on_map { race = 'alien', role = goal_planet.id }
+                        --std_print('# aliens: ' .. #aliens)
+                        if (#aliens == 0) then
+                            break
+                        end
+                    end
                 end
 
                 -- This designates the end of this assignment --> delete all remaining unit variables
