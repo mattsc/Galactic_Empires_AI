@@ -59,7 +59,7 @@ function ca_GE_ground_combat:evaluation(cfg, data, ai_debug)
             -- Aliens are strong and individual attack ratings could be negative,
             -- so we only keep combos with max number of attacks, so that units
             -- do not block hexes from other units in later attacks
-            local max_number, max_attack_combos = 0
+            local max_number, max_attack_combos = 0, {}
             for _,combo in ipairs(combos) do
                 local att_number = 0
                 for dst,src in pairs(combo) do att_number = att_number + 1 end
