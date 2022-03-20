@@ -5,7 +5,8 @@
 --   Specifically, attacks on:
 --   - Planets (except for neutral planets, which are never attacked)
 --     These happen before the default combat CA if the attacking ship has
---     an antimatter weapon, or afterward otherwise
+--     an antimatter weapon, or afterward otherwise, but only on planets that
+--     are down to <=25% of their maximum hitpoints in the latter case
 --   - Transports without passengers and probes
 
 local ca_name = 'space_combat'
@@ -172,8 +173,14 @@ function ca_GE_space_combat:evaluation(cfg, data, ai_debug)
                     { "filter_side", { {"allied_with", { side = wesnoth.current.side } } } }
                 })
                 --std_print('  ' .. UTLS.unit_str(enemy) .. ' #allied_units: ' .. #allied_units)
-                if (#allied_units == 0)
-                    or (enemy.variables.colonised == 'homeworld')
+
+                -- Without antimatter weapons, attacks on planets are generally a waste of
+                -- firepower -> do them only if planet is down to 25% of its max hitpoints
+                if (enemy.hitpoints <= 0.25 * enemy.max_hitpoints)
+                    and (
+                        (#allied_units == 0)
+                        or (enemy.variables.colonised == 'homeworld')
+                    )
                 then
                     valid_target_map:insert(enemy.x, enemy.y, {
                         id = enemy.id,
