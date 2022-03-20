@@ -1192,9 +1192,9 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     end
 
                     if (not passenger_index) then -- this should not happen; only here for trouble shooting
-                        DBG.dbms(passengers)
+                        DBG.dbms(passengers, false, 'passengers beam-down error')
                         std_print(UTLS.unit_str(transport))
-                        DBG.dbms(assignment)
+                        DBG.dbms(assignment, false, 'passengers beam-down error')
                     end
 
                     -- If there's a unit in the beam-down location, try to move it out of the way
