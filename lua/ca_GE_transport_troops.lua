@@ -762,6 +762,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 end
             end
             assigned_transports = {}
+            assignments = {}
 
             find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
         end
