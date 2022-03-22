@@ -433,22 +433,30 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     -- Find hostile aliens on neutral planets
-    local max_alien_power = 0
+    local alien_power_by_planet = {}
     local aliens = wesnoth.units.find_on_map { race = 'alien', { 'not', { ability = 'friendly' } } }
     for _,alien in ipairs(aliens) do
         local planet = UTLS.get_planet_from_unit(alien)
         if planet:matches {
-                { 'filter_side', {  -- this excludes neutral planets
+                { 'filter_side', {  -- this selects neutral planets
                     { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
                 } }
             }
         then
             local power = UTLS.unit_power(alien)
             --std_print('alien: ' .. UTLS.unit_str(alien), power, planet.id)
-            max_alien_power = math.max(max_alien_power, power)
+            alien_power_by_planet[planet.id] = (alien_power_by_planet[planet.id] or 0) + power
+        end
+    end
+
+    local max_alien_power = 0
+    for _,power in pairs(alien_power_by_planet) do
+        if (power > max_alien_power) then
+            max_alien_power = power
         end
     end
     --std_print('max_alien_power: ' .. max_alien_power)
+    --DBG.dbms(alien_power_by_planet, false, 'alien_power_by_planet')
 
 
     -- Check whether an invasion of the AI homeworld is imminent
