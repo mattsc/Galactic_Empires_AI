@@ -785,7 +785,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
-            instructions.power_needed[planet.id] = math.max(max_alien_power, 1)
+            instructions.power_needed[planet.id] = math.max(max_alien_power * 1.2, 1)
         end
 
         local artifact_locs = UTLS.get_artifact_locs()
