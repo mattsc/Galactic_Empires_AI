@@ -279,6 +279,15 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         -- Also prefer transports that transport more units
                         local n_unit_rating = 1 + n_units / 10
 
+                        -- Add a stiff penalty for assignments that do not provide the required power
+                        -- and do not involve at least 3 passengers
+                        -- This results in these not being used unless there is no other option
+                        local penalty = 0
+                        if (completion_rating < 1)  and (n_units < 3) then
+                            penalty = -10
+                        end
+                        rating = rating + penalty
+
                         rating = rating * completion_rating * unit_rating * n_unit_rating
                         --std_print('  ratings power needed: ' .. dist_rating, completion_rating, unit_rating, n_unit_rating .. '  -->  ' .. rating)
                     else
