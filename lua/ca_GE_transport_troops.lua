@@ -264,7 +264,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                     local power_missing = power_needed - power_assigned
                     --std_print(UTLS.unit_str(transport), pickup_id, goal_id, power_needed, power_missing)
 
-                    local rating = dist_rating
+                    local rating
                     if (power_missing > 0) then
                         local available_id = pickup_id
                         if (pickup_id == 'self') then
@@ -284,13 +284,20 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         -- and do not involve at least 3 passengers
                         -- This results in these not being used unless there is no other option
                         local penalty = 0
-                        if (completion_rating < 1)  and (n_units < 3) then
-                            penalty = -10
+                        if (completion_rating < 1) then
+                            if instructions.enough_power_only then
+                                penalty = -1000
+                            elseif (n_units < 3) then
+                                penalty = -10
+                            end
+                        end
+
+                        if (penalty > -1000) then
+                            rating = dist_rating * completion_rating * unit_rating * n_unit_rating + penalty
                         end
 
                         --std_print(string.format('%.3f * %.3f * %.3f * %.3f  + %3d  =  %.3f    <-- %-45s: %12s -> %-12s %.1f/%.1f',
-                        --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, rating, UTLS.unit_str(transport), pickup_id, goal_id, power_needed-power_missing, power_needed))
-                        rating = rating * completion_rating * unit_rating * n_unit_rating + penalty
+                        --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, (rating or -999), UTLS.unit_str(transport), pickup_id, goal_id, power_needed-power_missing, power_needed))
                     else
                         -- Not sure if we'll ever get to the point where we have transports
                         -- left, but no planet where they are needed
@@ -298,6 +305,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         -- so that this is not used if there are still planets left that need power
                         -- Also, strongly prefer sending troops toward homeworlds in this case
                         local goal_planet = wesnoth.units.find_on_map { id = goal_id }[1]
+                        rating = dist_rating
                         if (goal_planet.variables.colonised == 'homeworld') then
                             rating = rating / 100
                         else
@@ -306,7 +314,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         --std_print('----- rating: ', transport_id, goal_id, rating)
                     end
 
-                    if (rating > max_rating) then
+                    if rating and (rating > max_rating) then
                         max_rating = rating
                         best_id = transport_id
                         best_goal_id = goal_id
@@ -801,6 +809,8 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         instructions.power_needed = {}
         instructions.n_assigned = 0
         instructions.stop_when_enough_power = true
+        -- Ignore planets that have so many aliens that we cannot take them
+        instructions.enough_power_only = true
 
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
