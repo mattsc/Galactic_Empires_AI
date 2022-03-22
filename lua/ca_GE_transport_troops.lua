@@ -137,7 +137,7 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
             changes_state = true
         end
         --std_print(UTLS.unit_str(transport) .. ' is at goal planet, changes_state:', changes_state)
-    elseif (not are_variables_set(transport, instructions.purpose, goal_id, pickup_id)) then
+    elseif (not are_variables_set(transport, instructions.settings.purpose, goal_id, pickup_id)) then
         --std_print(UTLS.unit_str(transport) .. ' needs variables changed')
         changes_state = true
     end
@@ -184,8 +184,8 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
     if (not changes_state) then return end
 
 
-    if (not assignments[instructions.purpose]) then assignments[instructions.purpose] = {} end
-    table.insert(assignments[instructions.purpose], {
+    if (not assignments[instructions.settings.purpose]) then assignments[instructions.settings.purpose] = {} end
+    table.insert(assignments[instructions.settings.purpose], {
         transport_id = transport_id,
         goal_id = goal_id,
         pickup_id = pickup_id,
@@ -250,8 +250,8 @@ local function find_assignments(assignments, transports, instructions, planets_b
     -- Now assign transports until we either have enough or none are left
     -- The assigned power changes as we go through this, so the rest of the rating
     -- needs to be done one by one
-    while (instructions.n_needed > instructions.n_assigned) and next(dist_ratings) do
         --std_print('next assignment:')
+    while (instructions.settings.n_needed > instructions.n_assigned) and next(dist_ratings) do
         local max_rating = - math.huge
         local best_id, best_pickup_id, best_goal_id
         for transport_id,transport_ratings in pairs(dist_ratings) do
@@ -285,7 +285,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         -- This results in these not being used unless there is no other option
                         local penalty = 0
                         if (completion_rating < 1) then
-                            if instructions.enough_power_only then
+                            if instructions.settings.enough_power_only then
                                 penalty = -1000
                             elseif (n_units < 3) then
                                 penalty = -10
@@ -351,8 +351,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
 
         -- If 'stop_when_enough_power' directive is given, stop assigning transports
         -- when enough power has been assigned to each planet.
-        -- This is currently only used for the defend_homeworld purpose
-        if instructions.stop_when_enough_power then
+        if instructions.settings.stop_when_enough_power then
             local enough_power = true
             for planet_id,power_needed in pairs(instructions.power_needed) do
                 local power_assigned = instructions.power_assigned[planet_id] or 0
@@ -650,11 +649,11 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         n_needed_combat = 0
     end
 
-    instructions.n_needed = math.max(n_needed_colonise, n_needed_combat)
-    --std_print('n_needed colonise, combat, overall:', n_needed_colonise, n_needed_combat, instructions.n_needed)
+    local n_needed_overall = math.max(n_needed_colonise, n_needed_combat)
+    --std_print('n_needed colonise, combat, overall:', n_needed_colonise, n_needed_combat, n_needed_overall)
 
-    local n_missing = instructions.n_needed - #all_transports
-    --std_print('transports needed / missing: ' .. instructions.n_needed .. ' / ' .. n_missing)
+    local n_missing = n_needed_overall - #all_transports
+    --std_print('transports needed / missing: ' .. n_needed_overall .. ' / ' .. n_missing)
 
     if (n_missing > 0) then
         --std_print('  need more transports, checking whether we can recruit more; need: ' .. n_missing)
@@ -748,12 +747,16 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     --std_print('Homeworld power needed:          ' .. homeworld_power_needed)
 
     if (homeworld_power_needed > 0) then
-        instructions.purpose = 'defend_homeworld'
+        instructions.settings = {
+            purpose = 'defend_homeworld',
+            n_needed = math.huge, -- for defending the homeworld, we always assign as many transports as needed
+            stop_when_enough_power = true,
+            enough_power_only = false
+        }
+
         instructions.power_needed = {}
         instructions.power_needed[homeworld.id] = homeworld_power_needed
         instructions.n_assigned = 0
-        instructions.n_needed = math.huge -- for defending the homeworld, we always assign as many transports as needed
-        instructions.stop_when_enough_power = true
 
         add_combat_rating(instructions.available_units)
 
@@ -805,12 +808,15 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     ------ Colonise neutral planets ------
     --std_print('colonise: number of neutral planets: ' .. #neutral_planets)
     if (#neutral_planets > 0) then
-        instructions.purpose = 'colonise'
+        instructions.settings = {
+            purpose = 'colonise',
+            n_needed = n_needed_colonise,
+            stop_when_enough_power = true,
+            enough_power_only = true -- ignore planets that have so many aliens that we cannot take them
+        }
+
         instructions.power_needed = {}
         instructions.n_assigned = 0
-        instructions.stop_when_enough_power = true
-        -- Ignore planets that have so many aliens that we cannot take them
-        instructions.enough_power_only = true
 
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
@@ -905,10 +911,15 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     ------ Move combat units ------
-    instructions.purpose = 'combat'
+    instructions.settings = {
+        purpose = 'combat',
+        n_needed = math.huge, -- for combat, we always assign all transports
+        stop_when_enough_power = false,
+        enough_power_only = false
+    }
+
     instructions.power_needed = {}
     instructions.n_assigned = 0
-    instructions.n_needed = math.huge -- for combat, we always assign all transports
 
     add_combat_rating(instructions.available_units)
 
