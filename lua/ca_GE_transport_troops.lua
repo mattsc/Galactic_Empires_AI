@@ -782,6 +782,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         instructions.purpose = 'colonise'
         instructions.power_needed = {}
         instructions.n_assigned = 0
+        instructions.stop_when_enough_power = true
 
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
