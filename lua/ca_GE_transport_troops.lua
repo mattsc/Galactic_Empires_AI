@@ -251,6 +251,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
     -- The assigned power changes as we go through this, so the rest of the rating
     -- needs to be done one by one
     while (instructions.n_needed > instructions.n_assigned) and next(dist_ratings) do
+        --std_print('next assignment:')
         local max_rating = - math.huge
         local best_id, best_pickup_id, best_goal_id
         for transport_id,transport_ratings in pairs(dist_ratings) do
@@ -289,7 +290,8 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         rating = rating + penalty
 
                         rating = rating * completion_rating * unit_rating * n_unit_rating
-                        --std_print('  ratings power needed: ' .. dist_rating, completion_rating, unit_rating, n_unit_rating .. '  -->  ' .. rating)
+                        --std_print(string.format('%.3f * %.3f * %.3f * %.3f  + %3d  =  %.3f    <-- %-45s: %12s -> %-12s %.1f/%.1f',
+                        --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, rating, UTLS.unit_str(transport), pickup_id, goal_id, power_needed-power_missing, power_needed))
                     else
                         -- Not sure if we'll ever get to the point where we have transports
                         -- left, but no planet where they are needed
@@ -805,6 +807,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         for _,planet in ipairs(neutral_planets) do
             instructions.power_needed[planet.id] = math.max(max_alien_power * 1.2, 1)
         end
+        --DBG.dbms(instructions.power_needed, false, 'power_needed colonise')
 
         local artifact_locs = UTLS.get_artifact_locs()
         --std_print('#artifact_locs: ' .. #artifact_locs)
@@ -865,10 +868,12 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 }
                 and ((not pickup_id) or instructions.available_units[pickup_id])
             then
+                --std_print('set assignment: ' .. UTLS.unit_str(transport))
                 set_assignment(assignments, instructions, transport.id, goal_id, pickup_id)
                 --DBG.dbms(assignments, false, 'assignments colonise')
                 --DBG.dbms(instructions.power_assigned, false, 'instructions.power_assigned')
             else
+                --std_print('unset assignment: ' .. UTLS.unit_str(transport))
                 -- We do not need to remove the transport from the assigned_transports table
                 -- We do, however, need to add it to the unassigned_transports table
                 -- Also, we cannot delete its variables, as that would cause OOS errors; this
@@ -972,6 +977,8 @@ end
 
 function ca_GE_transport_troops:execution(cfg, data, ai_debug)
     local ai = ai or ai_debug
+
+    --DBG.dbms(assignments, false, 'assignments execution')
 
     ------ Recruiting ------
     if assignments.recruit then
