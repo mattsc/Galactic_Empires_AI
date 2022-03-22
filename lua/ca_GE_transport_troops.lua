@@ -287,11 +287,10 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         if (completion_rating < 1)  and (n_units < 3) then
                             penalty = -10
                         end
-                        rating = rating + penalty
 
-                        rating = rating * completion_rating * unit_rating * n_unit_rating
                         --std_print(string.format('%.3f * %.3f * %.3f * %.3f  + %3d  =  %.3f    <-- %-45s: %12s -> %-12s %.1f/%.1f',
                         --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, rating, UTLS.unit_str(transport), pickup_id, goal_id, power_needed-power_missing, power_needed))
+                        rating = rating * completion_rating * unit_rating * n_unit_rating + penalty
                     else
                         -- Not sure if we'll ever get to the point where we have transports
                         -- left, but no planet where they are needed
