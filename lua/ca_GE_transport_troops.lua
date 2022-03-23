@@ -142,7 +142,7 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
         changes_state = true
     end
 
-    local power_needed = instructions.power_needed[goal_id]
+    local power_needed = instructions.settings.power_desired or instructions.power_needed[goal_id]
     local passenger_power = instructions.available_power[transport.id] or 0
     local power_missing = power_needed - passenger_power
     local capacity = transport.attacks[1].number - transport.attacks[1].damage
@@ -250,8 +250,8 @@ local function find_assignments(assignments, transports, instructions, planets_b
     -- Now assign transports until we either have enough or none are left
     -- The assigned power changes as we go through this, so the rest of the rating
     -- needs to be done one by one
-        --std_print('next assignment:')
     while (instructions.settings.n_needed > instructions.n_assigned) and next(dist_ratings) do
+        --std_print('next assignment:')
         local max_rating = - math.huge
         local best_id, best_pickup_id, best_goal_id
         for transport_id,transport_ratings in pairs(dist_ratings) do
@@ -259,10 +259,15 @@ local function find_assignments(assignments, transports, instructions, planets_b
             local capacity = transport.attacks[1].number - transport.attacks[1].damage
             for pickup_id,pickup_planet_ratings in pairs(transport_ratings) do
                 for goal_id,dist_rating in pairs(pickup_planet_ratings) do
+                    -- Desired power is set for all planets equally (such as when there
+                    -- are aliens on some, but not all planets). By contrast, needed power
+                    -- is what is actually needed on each individual planet.
                     local power_needed = instructions.power_needed[goal_id]
+                    local power_desired = instructions.settings.power_desired or power_needed
+
                     local power_assigned = instructions.power_assigned and instructions.power_assigned[goal_id] or 0
-                    local power_missing = power_needed - power_assigned
-                    --std_print(UTLS.unit_str(transport), pickup_id, goal_id, power_needed, power_missing)
+                    local power_missing = power_desired - power_assigned
+                    --std_print(UTLS.unit_str(transport), pickup_id, goal_id, power_desired, power_missing)
 
                     local rating
                     if (power_missing > 0) then
@@ -274,7 +279,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local unit_rating, n_units, new_power_assigned = find_best_troops(instructions.available_units[available_id], power_missing, capacity)
 
                         -- Prefer transport/planet pairs that will provide a large fraction of the power needed
-                        local completion_rating = (power_assigned + new_power_assigned) / power_needed
+                        local completion_rating = (power_assigned + new_power_assigned) / power_desired
                         if (completion_rating > 1) then completion_rating = 1 end
 
                         -- Also prefer transports that transport more units
@@ -283,9 +288,13 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         -- Add a stiff penalty for assignments that do not provide the required power
                         -- and do not involve at least 3 passengers
                         -- This results in these not being used unless there is no other option
+                        -- Also, if 'enough_power_only' is set, completely disable those.
+                        -- This is used mostly for colonising planets with aliens.
                         local penalty = 0
                         if (completion_rating < 1) then
-                            if instructions.settings.enough_power_only then
+                            -- This uses power_needed, while completion_rating uses power_desired
+                            local real_power_missing = power_needed - power_assigned - new_power_assigned
+                            if instructions.settings.enough_power_only and (real_power_missing > 0) then
                                 penalty = -1000
                             elseif (n_units < 3) then
                                 penalty = -10
@@ -297,7 +306,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         end
 
                         --std_print(string.format('%.3f * %.3f * %.3f * %.3f  + %3d  =  %.3f    <-- %-45s: %12s -> %-12s %.1f/%.1f',
-                        --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, (rating or -999), UTLS.unit_str(transport), pickup_id, goal_id, power_needed-power_missing, power_needed))
+                        --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, (rating or -999), UTLS.unit_str(transport), pickup_id, goal_id, power_desired-power_missing, power_desired))
                     else
                         -- Not sure if we'll ever get to the point where we have transports
                         -- left, but no planet where they are needed
@@ -311,6 +320,10 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         else
                             rating = rating / 1000
                         end
+
+                        -- We also need to apply a large penalty, otherwise this might be chosen over the options above
+                        rating = rating - 100
+
                         --std_print('----- rating: ', transport_id, goal_id, rating)
                     end
 
@@ -806,21 +819,32 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     ------ Colonise neutral planets ------
+
+    -- Colonising is slightly different from the other purposes in that we want to go to several
+    -- planets with the same transport/troops. This is easy when there are no aliens, but if there
+    -- are, some planets will have aliens, while others don't. Thus, we want to load the transport
+    -- with enough power for planets with aliens, but not disable an assignment if it provides
+    -- enough power for the currently considered transport. As a result, we use both a
+    -- "desired" and a "needed" power setting for colonising.
+
     --std_print('colonise: number of neutral planets: ' .. #neutral_planets)
     if (#neutral_planets > 0) then
         instructions.settings = {
             purpose = 'colonise',
             n_needed = n_needed_colonise,
+            power_desired = math.max(max_alien_power * 1.2, 1),
             stop_when_enough_power = true,
             enough_power_only = true -- ignore planets that have so many aliens that we cannot take them
         }
+        --DBG.dbms(instructions.settings, false, 'instructions.settings colonise')
 
         instructions.power_needed = {}
         instructions.n_assigned = 0
 
         -- For colonising, we just need any unit, except when there are aliens
         for _,planet in ipairs(neutral_planets) do
-            instructions.power_needed[planet.id] = math.max(max_alien_power * 1.2, 1)
+            -- note the 'or 1' (as opposed to 'or 0'), otherwise planets without aliens will not be colonised
+            instructions.power_needed[planet.id] = (alien_power_by_planet[planet.id] or 1) * 1.2
         end
         --DBG.dbms(instructions.power_needed, false, 'power_needed colonise')
 
