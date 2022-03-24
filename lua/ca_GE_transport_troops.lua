@@ -198,6 +198,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
     local dist_ratings = {}
     for _,transport in ipairs(transports) do
         local passenger_power = instructions.available_power[transport.id] or 0
+        local capacity = transport.attacks[1].number - transport.attacks[1].damage
         --std_print(UTLS.unit_str(transport) .. ': passenger_power ' .. passenger_power .. '; capacity ' .. transport.attacks[1].number - transport.attacks[1].damage .. '; moves ' .. transport.moves)
 -- xxxx goal planet must have space to beam down to
 
@@ -221,7 +222,11 @@ local function find_assignments(assignments, transports, instructions, planets_b
                     if (not dist_ratings[transport.id].self) then dist_ratings[transport.id].self = {} end
                     dist_ratings[transport.id]['self'][goal_planet.id] = 1 / dist
                 -- While those without need to pick up troops at a pickup planet first
-                else
+                end
+
+                -- All transports with capacity left (incl. those that already have passengers)
+                -- might want/need to go to a pickup planet first
+                if (capacity > 0) then
                     for _,pickup_planet in pairs(planets_by_id) do
                         local available_power = instructions.available_power[pickup_planet.id] or 0
                         if (available_power > 0) then
@@ -257,6 +262,8 @@ local function find_assignments(assignments, transports, instructions, planets_b
         for transport_id,transport_ratings in pairs(dist_ratings) do
             local transport = wesnoth.units.find_on_map { id = transport_id }[1]
             local capacity = transport.attacks[1].number - transport.attacks[1].damage
+            local passenger_power = instructions.available_power[transport.id] or 0
+
             for pickup_id,pickup_planet_ratings in pairs(transport_ratings) do
                 for goal_id,dist_rating in pairs(pickup_planet_ratings) do
                     -- Desired power is set for all planets equally (such as when there
@@ -279,7 +286,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local unit_rating, n_units, new_power_assigned = find_best_troops(instructions.available_units[available_id], power_missing, capacity)
 
                         -- Prefer transport/planet pairs that will provide a large fraction of the power needed
-                        local completion_rating = (power_assigned + new_power_assigned) / power_desired
+                        local completion_rating = (power_assigned + new_power_assigned + passenger_power) / power_desired
                         if (completion_rating > 1) then completion_rating = 1 end
 
                         -- Also prefer transports that transport more units
@@ -293,7 +300,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local penalty = 0
                         if (completion_rating < 1) then
                             -- This uses power_needed, while completion_rating uses power_desired
-                            local real_power_missing = power_needed - power_assigned - new_power_assigned
+                            local real_power_missing = power_needed - power_assigned - new_power_assigned - passenger_power
                             if instructions.settings.enough_power_only and (real_power_missing > 0) then
                                 penalty = -1000
                             elseif (n_units < 3) then
