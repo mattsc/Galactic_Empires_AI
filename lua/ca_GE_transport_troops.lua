@@ -1169,11 +1169,10 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
             --- Move toward goal planet if:
             --   - pickup planet is not set
             --   - transport has moves left
-            --   - transport is not already adjacent to goal planet
-            if (not pickup_planet)
-                and (transport.moves > 0)
-                and (wesnoth.map.distance_between(goal_planet.x, goal_planet.y, transport.x, transport.y) ~= 1)
-            then
+            --   - do NOT check if transport is already adjacent to goal planet; if it is, this means
+            --     that it was either just assigned (because something changed) or that it cannot
+            --     beam down its passengers (because the beam-down hex is occupied)
+            if (not pickup_planet) and (transport.moves > 0) then
                 local min_rating, best_hex = math.huge, {}
 
                 -- If there are artifact or aliens on the planet, try to beam down close to them
