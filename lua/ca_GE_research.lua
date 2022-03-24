@@ -91,7 +91,7 @@ function ca_GE_research:execution(cfg, data, ai_debug)
     --std_print('research points before, after:', research_points_before, research_points_after)
     if (research_points_after ~= research_points_before - unlock_cost) then
         data.GEAI_abort = true
-        error(ca_name .. ' CA: something went wrong with: ' .. str)
+        DBG.error('research', str)
     else
         UTLS.force_gamestate_change(ai)
     end

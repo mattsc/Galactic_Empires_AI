@@ -11,6 +11,16 @@ function debug_utils.show_debug(debug_type)
     return debug_cfg[debug_type]
 end
 
+function debug_utils.error(speaker, message)
+    local str1 = speaker .. ' error'
+    local str2 = string.format('T%d S%d: ', wesnoth.current.turn, wesnoth.current.side) .. message
+    wesnoth.interface.add_chat_message(str1, str2)
+    std_print('<' .. str1 .. '>  ' .. str2)
+
+    -- Also do this in order to cause an exception, but it just shows 'unknown exception' at the moment
+    error(str2)
+end
+
 function debug_utils.print_ts(...)
     -- Print arguments preceded by a time stamp in seconds
     -- Also return that time stamp

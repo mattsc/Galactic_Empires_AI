@@ -122,7 +122,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         elseif (planet.type == 'Dust Dwarf') then minor_rating = minor_rating + 0.3
         elseif (planet.type == 'Ice Dwarf') then minor_rating = minor_rating + 0.2
         elseif (planet.type == 'Moon') or (planet.type == 'Red Moon') then minor_rating = minor_rating + 0.1
-        else error('Unknown planet type: ' .. planet.type)
+        else DBG.error('upgrade', 'Unknown planet type: ' .. planet.type)
         end
         --std_print('  minor_rating: ' .. minor_rating)
 
@@ -569,7 +569,7 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
     --std_print('gold before, after:', gold_before, gold_after)
     if (gold_before ~= gold_after + best_upgrade.cost) then
         data.GEAI_abort = true
-        error('Something went wrong with ' .. str)
+        DBG.error('apply upgrade', str)
     else
         UTLS.force_gamestate_change(ai)
     end

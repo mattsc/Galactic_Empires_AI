@@ -237,7 +237,7 @@ function ca_GE_population_control:execution(cfg, data, ai_debug)
         local new_type = hq.variables.population_preference
         if (new_type ~= unit_type) then
             data.GEAI_abort = true
-            error(ca_name .. ' CA: something went wrong with: ' .. str)
+            DBG.error('population control', str)
         else
             UTLS.force_gamestate_change(ai)
         end

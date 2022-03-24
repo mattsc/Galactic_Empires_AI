@@ -540,7 +540,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 add_available_unit(instructions.available_units, transport.id, unit)
             else
                 -- just a safeguard, this should never happen
-                error('!!!!!!!!!!!!!!!! ' .. passenger.id .. ' ' .. ' not on ' .. transport.id .. ' on side ' .. wesnoth.current.side)
+                DBG.error('transport troops', '!!!!!!!!!!!!!!!! ' .. passenger.id .. ' ' .. ' not on ' .. transport.id .. ' on side ' .. wesnoth.current.side)
             end
         end
     end
@@ -1081,7 +1081,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
 
                 if (not are_variables_set(transport, purpose, assignment.goal_id, assignment.pickup_id)) then
                     data.GEAI_abort = true
-                    error('Assigning variables to transport ' .. transport.id .. ' did not succeed')
+                    DBG.error('assign variables to transport', str)
                 else
                     UTLS.force_gamestate_change(ai)
                 end
@@ -1153,7 +1153,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                         --std_print('passengers before, after:', passengers_before, passengers_after)
                         if (passengers_after ~= passengers_before + 1) then
                             data.GEAI_abort = true
-                            error('beam-up CA: something went wrong with: ' .. str)
+                            DBG.error('beam up', str)
                         else
                             UTLS.force_gamestate_change(ai)
                         end
@@ -1314,7 +1314,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     --std_print('passengers before, after:', passengers_before, passengers_after)
                     if (passengers_after ~= passengers_before - 1) then
                         data.GEAI_abort = true
-                        error('Something went wrong with ' .. str)
+                        DBG.error('beam down', str)
                     else
                         UTLS.force_gamestate_change(ai)
                     end
