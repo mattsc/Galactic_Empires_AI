@@ -856,7 +856,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         -- are other enemy units on it.
         for _,planet in ipairs(neutral_planets) do
             -- note the 'or 1' (as opposed to 'or 0'), otherwise planets without aliens will not be colonised
-            instructions.power_needed[planet.id] = (alien_power_by_planet[planet.id] or 1) * 1.2
+            instructions.power_needed[planet.id] = (alien_power_by_planet[planet.id] or 1) * 1.5
         end
         --DBG.dbms(instructions.power_needed, false, 'power_needed colonise')
 
