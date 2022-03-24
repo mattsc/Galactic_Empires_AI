@@ -842,6 +842,11 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         instructions.n_assigned = 0
 
         -- For colonising, we just need any unit, except when there are aliens
+        -- Note that this is only the power of aliens, not counting alien HQs or other
+        -- enemy units on the same planet. As this is for colonising, this is generally
+        -- okay, as most planets will only be neutral early in the game. Later in the game,
+        -- the next purpose (combat) might send more troops to the same planet if there
+        -- are other enemy units on it.
         for _,planet in ipairs(neutral_planets) do
             -- note the 'or 1' (as opposed to 'or 0'), otherwise planets without aliens will not be colonised
             instructions.power_needed[planet.id] = (alien_power_by_planet[planet.id] or 1) * 1.2
