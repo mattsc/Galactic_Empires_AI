@@ -1039,7 +1039,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
     ------ Recruiting ------
     if assignments.recruit then
         for _,assignment in ipairs(assignments.recruit) do
-            local str = 'recruit ' .. assignment.type .. ' at ' .. UTLS.loc_str(assignment)
+            local str = 'recruit: ' .. assignment.type .. ' at ' .. UTLS.loc_str(assignment)
             DBG.print_debug_exec(ca_name, str)
             UTLS.output_add_move(str)
 
@@ -1068,7 +1068,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
 
             --- Set the unit variables
             if (not are_variables_set(transport, purpose, assignment.goal_id, assignment.pickup_id)) then
-                local str = 'set transport goal: ' .. purpose .. ': ' .. UTLS.unit_str(transport) .. ' --> ' .. UTLS.unit_str(goal_planet)
+                local str = purpose .. ': set transport goal: ' .. UTLS.unit_str(transport) .. ' --> ' .. UTLS.unit_str(goal_planet)
                 if pickup_planet then
                     str = str .. ' via ' .. UTLS.unit_str(pickup_planet)
                 end
@@ -1115,7 +1115,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2])
 
-                local str = 'move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(pickup_planet) .. ' for pickup --> ' .. UTLS.loc_str(next_hop)
+                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(pickup_planet) .. ' for pickup --> ' .. UTLS.loc_str(next_hop)
                 DBG.print_debug_exec(ca_name, str)
                 UTLS.output_add_move(str)
                 AH.robust_move_and_attack(ai, transport, next_hop, nil, { partial_move = true })
@@ -1140,7 +1140,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     if unit then
                         local beam_up_cfg = { x = unit.x, y = unit.y, direction = direction }
 
-                        local str = 'beam up ' .. UTLS.unit_str(unit) .. ' from ' .. UTLS.unit_str(pickup_planet) .. ' to ' .. UTLS.unit_str(transport)
+                        local str = purpose .. ': beam up ' .. UTLS.unit_str(unit) .. ' from ' .. UTLS.unit_str(pickup_planet) .. ' to ' .. UTLS.unit_str(transport)
                         DBG.print_debug_exec(ca_name, str)
                         UTLS.output_add_move(str)
 
@@ -1247,7 +1247,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2])
 
-                local str = 'move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(goal_planet) .. ' --> ' .. UTLS.loc_str(next_hop)
+                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(goal_planet) .. ' --> ' .. UTLS.loc_str(next_hop)
                 DBG.print_debug_exec(ca_name, str)
                 UTLS.output_add_move(str)
                 AH.robust_move_and_attack(ai, transport, next_hop, nil, { partial_move = true })
@@ -1301,7 +1301,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                         planet_id = goal_planet.id
                     }
 
-                    local str = 'beam down ' .. beam_down_cfg.id .. ' on ' .. UTLS.unit_str(transport) .. ' to ' .. UTLS.unit_str(goal_planet)
+                    local str = purpose .. ': beam down ' .. beam_down_cfg.id .. ' on ' .. UTLS.unit_str(transport) .. ' to ' .. UTLS.unit_str(goal_planet)
                     DBG.print_debug_exec(ca_name, str)
                     UTLS.output_add_move(str)
 
