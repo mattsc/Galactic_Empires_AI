@@ -803,13 +803,13 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         if (homeworld_power_missing > 0) then
             -- If there is power missing at the homeworld, we unassigned all other transports
             -- and assign transports to defending the homeworld as the highest priority
-            -- In fact, given that things might have changed, we also erase previous assignments
-            -- for defending the homeworld in order to find the optimum solution for the current situation
 
             for purpose,transports in pairs(assigned_transports) do
                 for _,transport in ipairs(transports) do
                     --std_print(purpose, 'assigned transport: ' .. UTLS.unit_str(transport) .. ' -> ' .. transport.variables.GEAI_goal_id)
-                    table.insert(unassigned_transports, transport)
+                    if (purpose ~= 'defend_homeworld') then
+                        table.insert(unassigned_transports, transport)
+                    end
                 end
             end
             assigned_transports = {}
