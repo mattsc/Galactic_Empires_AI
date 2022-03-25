@@ -914,12 +914,17 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         for _,transport in ipairs(assigned_transports.colonise or {}) do
             local goal_id = transport.variables.GEAI_goal_id
             local pickup_id = transport.variables.GEAI_pickup_id
+
+            local power_provided = (instructions.available_power[transport.id] or 0) + (instructions.available_power[pickup_id or 'abc'] or 0)
+--            std_print(power_provided, instructions.power_needed[goal_id])
+
             if planets_by_id[goal_id]:matches {
                     { 'filter_side', {  -- this excludes neutral planets
                         { 'not', { { 'has_unit', { canrecruit = 'yes' } } } }
                     } }
                 }
                 and ((not pickup_id) or instructions.available_units[pickup_id])
+                and (power_provided >= instructions.power_needed[goal_id])
             then
                 --std_print('set assignment: ' .. UTLS.unit_str(transport))
                 set_assignment(assignments, instructions, transport.id, goal_id, pickup_id)
