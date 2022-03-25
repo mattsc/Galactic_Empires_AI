@@ -56,4 +56,34 @@ function GEAI_manual_mode.add_research_points()
     wml.variables[var] = wml.variables[var] + 30
 end
 
+function GEAI_manual_mode.units_info(stdout_only)
+    -- Show information for all units. Specifically, this links the
+    -- unit id to its position, name etc. for easier identification.
+    -- It also puts labels with the unit ids on the map. A second call
+    -- to the function removes the labels.
+    local tmp_unit_proxies = wesnoth.units.find_on_map()
+    local str = ''
+    for _,u in ipairs(tmp_unit_proxies) do
+        str = str .. string.format('%2d,%2d    HP: %3d/%3d    XP: %3d/%3d        %s      (%s)\n',
+        u.x, u.y,
+        u.hitpoints, u.max_hitpoints, u.experience, u.max_experience,
+        u.id, tostring(u.name))
+
+        if wml.variables.debug_unit_labels then
+            wesnoth.label { x = u.x, y = u.y, text = '' }
+        else
+            wesnoth.label { x = u.x, y = u.y, text = u.id }
+        end
+    end
+
+    if wml.variables.debug_unit_labels then
+        wml.variables.debug_unit_labels = nil
+        wesnoth.clear_messages()
+    else
+        wml.variables.debug_unit_labels = true
+        std_print(str)
+        if (not stdout_only) then wesnoth.message(str) end
+    end
+end
+
 return GEAI_manual_mode
