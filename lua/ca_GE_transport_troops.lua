@@ -286,7 +286,11 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local unit_rating, n_units, new_power_assigned = find_best_troops(instructions.available_units[available_id], power_missing, capacity)
 
                         -- Prefer transport/planet pairs that will provide a large fraction of the power needed
-                        local completion_rating = (power_assigned + new_power_assigned + passenger_power) / power_desired
+                        local new_power = power_assigned + passenger_power
+                        if (pickup_id ~= 'self') then  -- don't double count the passengers if there is no pickup planet
+                            new_power = new_power + new_power_assigned
+                        end
+                        local completion_rating = new_power / power_desired
                         if (completion_rating > 1) then completion_rating = 1 end
 
                         -- Also prefer transports that transport more units
@@ -300,7 +304,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local penalty = 0
                         if (completion_rating < 1) then
                             -- This uses power_needed, while completion_rating uses power_desired
-                            local real_power_missing = power_needed - power_assigned - new_power_assigned - passenger_power
+                            local real_power_missing = power_needed - new_power
                             if instructions.settings.enough_power_only and (real_power_missing > 0) then
                                 penalty = -1000
                             elseif (n_units < 3) then
