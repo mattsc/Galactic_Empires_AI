@@ -318,10 +318,8 @@ local function find_assignments(assignments, transports, instructions, planets_b
 
                         --std_print(string.format('%.3f * %.3f * %.3f * %.3f  + %3d  =  %.3f    <-- %-45s: %12s -> %-12s %.1f/%.1f',
                         --    dist_rating, completion_rating, unit_rating, n_unit_rating, penalty, (rating or -999), UTLS.unit_str(transport), pickup_id, goal_id, power_desired-power_missing, power_desired))
-                    else
-                        -- Not sure if we'll ever get to the point where we have transports
-                        -- left, but no planet where they are needed
-                        -- But just in case we do, simply use the distance rating, but strongly derated
+                    elseif (not instructions.settings.stop_when_enough_power) then
+                        -- If planet has enough power assigned, simply use the distance rating, but strongly derated
                         -- so that this is not used if there are still planets left that need power
                         -- Also, strongly prefer sending troops toward homeworlds in this case
                         local goal_planet = wesnoth.units.find_on_map { id = goal_id }[1]
