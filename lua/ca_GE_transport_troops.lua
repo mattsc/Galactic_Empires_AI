@@ -10,6 +10,18 @@
 
 local ca_name = 'transport_troops'
 
+local function show_assigned_transports(assigned_transports, unassigned_transports)
+    for purpose,transports in pairs(assigned_transports) do
+        for _,transport in ipairs(transports) do
+            std_print('assigned:   ' .. purpose .. '  ' .. UTLS.unit_str(transport) .. ' -> ' .. transport.variables.GEAI_goal_id)
+        end
+    end
+    for _,transport in ipairs(unassigned_transports) do
+        std_print('unassigned: ' .. UTLS.unit_str(transport))
+    end
+
+end
+
 local function are_variables_set(transport, purpose, goal_id, pickup_id)
     return (transport.variables.GEAI_purpose == purpose)
         and (transport.variables.GEAI_goal_id == goal_id)
@@ -141,6 +153,7 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
         --std_print(UTLS.unit_str(transport) .. ' needs variables changed')
         changes_state = true
     end
+    --std_print(UTLS.unit_str(transport) .. ' changes_state:', changes_state)
 
     local power_needed = instructions.settings.power_desired or instructions.power_needed[goal_id]
     local passenger_power = instructions.available_power[transport.id] or 0
@@ -156,9 +169,6 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
     end
 
     -- Check what other units need to be picked up.
-    -- We always need to check whether there is a pickup planet, because the power on
-    -- the goal planet may have changed while the transport was en route (meaning that
-    -- both more or less power may be needed now).
     if pickup_id and (capacity > 0) then
         local unit_rating, n_units, power_assigned = find_best_troops(instructions.available_units[pickup_id], power_missing, capacity)
         passenger_power = passenger_power + power_assigned
@@ -427,13 +437,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             table.insert(unassigned_transports, transport)
         end
     end
-    --for purpose,transports in pairs(assigned_transports) do
-    --    for _,transport in ipairs(transports) do
-    --        std_print(purpose, 'assigned transport: ' .. UTLS.unit_str(transport) .. ' -> ' .. transport.variables.GEAI_goal_id)
-    --    end
-    --end
-    --for _,transport in ipairs(unassigned_transports) do std_print('unassigned transport: ' .. UTLS.unit_str(transport)) end
-
+    --show_assigned_transports(assigned_transports, unassigned_transports)
 
     --- Planets ---
     local all_planets = UTLS.get_planets()
@@ -943,8 +947,10 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         -- Then, find new ones
         find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
     end
+    --show_assigned_transports(assigned_transports, unassigned_transports)
     --DBG.dbms(assignments, false, 'assignments colonise')
     --DBG.dbms(instructions.power_assigned, false, 'instructions.power_assigned')
+    --DBG.dbms(instructions.available_power, false, 'instructions.available_power')
 
     if (assignments.colonise) and (assignments.colonise[1]) then
         DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.colonise .. ' transports found for colonising')
