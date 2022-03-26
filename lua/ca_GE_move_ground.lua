@@ -10,6 +10,8 @@
 --   2. Move injured units next to healers
 --   3. If all hexes around an HQ are occupied, try to move a unit out of the way,
 --      excluding workers (or 2 units, if the HQ has a cloner)
+--   4. If enemy transports with passengers are within one move, move units away
+--      from the corners
 
 local ca_name = 'move_ground'
 
@@ -419,7 +421,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
     end
 
 
-    -- Finally, check if the are enough empty tiles around the HQs (one normally,
+    -- Check if the are enough empty tiles around the HQs (one normally,
     -- two if HQ has a cloner). If not, try to move a unit out of the way.
     -- We only move one unit per call, in order to avoid them going for the same hex.
     -- If that proves too expensive, we can consider units in combination later.
@@ -448,7 +450,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
                     and unit:matches { side = wesnoth.current.side, { 'not', { ability = 'work' } } }
                 then
                     --std_print(UTLS.loc_str(xa, ya) .. ': ' .. UTLS.unit_str(unit))
-                    local reach = wesnoth.paths.find_reach(unit, cfg)
+                    local reach = wesnoth.paths.find_reach(unit)
                     for _,r in ipairs(reach) do
                         local unit_in_way = wesnoth.units.get(r[1], r[2])
                         --std_print(r[1], r[2], r[3], UTLS.unit_str(unit_in_way))
@@ -476,13 +478,108 @@ function ca_GE_move_ground:evaluation(cfg, data)
     end
     --DBG.dbms(moves_found, false, 'moves_found')
 
-    if (not moves_found[1]) then
+    if moves_found[1] then
+        DBG.print_debug_eval(ca_name, ca_score, start_time, #moves_found .. ' units found to move away from HQ')
+        return ca_score
+    else
         DBG.print_debug_eval(ca_name, 0, start_time, 'no qualifying moves away from HQs found')
-        return 0
     end
 
-    DBG.print_debug_eval(ca_name, ca_score, start_time, #moves_found .. ' units found to move away from HQ')
-    return ca_score
+
+    -- If enemy transports with passengers are within one move, move units away from the beam-down hexes
+    -- Check all planets, not just AI-owned
+    local enemy_transports = AH.get_attackable_enemies { ability = 'transport' }
+    local planets = UTLS.get_planets()
+    local dirs = { 'n', 'ne', 'se', 's', 'sw', 'nw' }
+
+    for _,planet in ipairs(planets) do
+        --std_print(UTLS.unit_str(planet))
+
+        -- Checking for distance between transports and planet first, because it's fastest, then
+        -- finding units in the corners, then path finding for the transports
+        local close_transports = {}
+        for _,transport in ipairs(enemy_transports) do
+            if (wesnoth.map.distance_between(planet, transport) <= transport.max_moves + 1)
+                and (transport.attacks[1].damage > 0)
+            then
+                table.insert(close_transports, transport)
+                --std_print('    close transport: ' .. UTLS.unit_str(transport))
+            end
+        end
+        --std_print('  #close_transports: ' .. #close_transports)
+
+        if (#close_transports > 0) then
+            local units = UTLS.get_units_on_planet(planet, { side = wesnoth.current.side }, true )
+
+            local corner_units = {}
+            for _,unit in ipairs(units) do
+                for _,dir in ipairs(dirs) do
+                    if (unit.x == planet.variables[dir .. '_x']) and (unit.y == planet.variables[dir .. '_y']) then
+                        table.insert(corner_units, unit)
+                        --std_print('    corner unit: ' .. UTLS.unit_str(unit))
+                        break
+                    end
+                end
+            end
+            --std_print('  #corner_units: ' .. #corner_units)
+
+            if (#corner_units > 0) then
+                --std_print('  checking threats')
+                local is_threat = false
+                for _,transport in ipairs(close_transports) do
+                    for xa,ya in H.adjacent_tiles(planet.x, planet.y) do
+                        -- ignore units, as some defenders may be killed by enemy ships
+                        local _,cost = wesnoth.paths.find_path(transport, xa, ya, { ignore_units = true })
+                        --std_print('    ' .. UTLS.loc_str({ xa, ya }), cost)
+
+                        if (cost <= transport.max_moves ) then
+                            --std_print('    is threat: ' .. UTLS.unit_str(transport))
+                            is_threat = true
+                            break
+                        end
+                    end
+                    if is_threat then break end
+                end
+
+                if is_threat then
+                    --std_print('  trying to move units')
+
+                    for _,unit in ipairs(corner_units) do
+                        local max_rating, best_move = -math.huge
+                        local reach = wesnoth.paths.find_reach(unit)
+                        for _,r in ipairs(reach) do
+                            local unit_in_way = wesnoth.units.get(r[1], r[2])
+                            --std_print(r[1], r[2], r[3], UTLS.unit_str(unit_in_way))
+                            if (not unit_in_way) then -- this also excludes the hex the unit is on itself
+                                local rating = r[3]
+                                if (rating > max_rating) then
+                                    max_rating = rating
+                                    best_move = { r[1], r[2] }
+                                end
+                            end
+                        end
+
+                        if best_move then
+                            table.insert(moves_found, {
+                                id = unit.id,
+                                src = { unit.x, unit.y },
+                                dst = best_move,
+                                partial_move = true
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if moves_found[1] then
+        DBG.print_debug_eval(ca_name, ca_score, start_time, #moves_found .. ' units found to move away from beam-down hexes')
+        return ca_score
+    end
+
+    DBG.print_debug_eval(ca_name, 0, start_time, 'no qualifying moves away from beam-down hexes found')
+    return 0
 end
 
 function ca_GE_move_ground:execution(cfg, data, ai_debug)
