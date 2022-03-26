@@ -149,7 +149,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
             local dirs = { 'n', 'ne', 'se', 's', 'sw', 'nw' }
             for _,dir in ipairs(dirs) do
                 if (hex[1] == planet.variables[dir .. '_x']) and (hex[2] == planet.variables[dir .. '_y']) then
-                    food = (food or 0) - 0.5
+                    food = (food or 0) - 0.9
                 end
             end
 
