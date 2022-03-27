@@ -617,8 +617,8 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 --std_print('is homeworld: ' .. planet.id, #my_units_this_planet, #neutral_planets)
                 -- Allow units for colonising (note that this is intentionally
                 -- larger than what is actually assigned below)
-                local min_units_available = #neutral_planets / 3
-                local n_keep_units = math.floor(math.min(#my_units_this_planet - min_units_available, 8))
+                local min_units_available = math.floor(#neutral_planets / 3)
+                local n_keep_units = math.min(#my_units_this_planet - min_units_available, 8)
                 if (n_keep_units < 0) then n_keep_units = 0 end
 
                 -- We want to keep a 2:1 ratio for workers:fighters
@@ -628,7 +628,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 local n_fighters = math.floor(1 / 3 * n_keep_units + 0.5)
                 --std_print('keep workers, fighters, total: ', n_workers, n_fighters, n_keep_units)
 
-                local workers, fighters = {}, {}
+                local workers, fighters, planet_unit_ids = {}, {}, {}
                 for i_u,unit in pairs(my_units_this_planet) do
                     if unit:matches { ability = 'work' } then
                         table.insert(workers, { id = unit.id, power = UTLS.unit_power(unit) })
@@ -636,24 +636,39 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                     else
                         table.insert(fighters, { id = unit.id, power = UTLS.unit_power(unit) })
                     end
+                    planet_unit_ids[unit.id] = true
                 end
-                -- For this purpose, we want to keep the strongest units on the planet
-                table.sort(workers, function(a, b) return a.power > b.power end)
-                table.sort(fighters, function(a, b) return a.power > b.power end)
+                -- Want to send the strongest units off for colonise and combat
+                table.sort(workers, function(a, b) return a.power < b.power end)
+                table.sort(fighters, function(a, b) return a.power < b.power end)
                 --DBG.dbms(workers, false, 'workers')
                 --DBG.dbms(fighters, false, 'fighters')
+                --DBG.dbms(planet_unit_ids, false, 'planet_unit_ids')
 
+                local n_kept = 0
                 for i_u = 1,math.min(#workers, n_workers) do
                     keep_units[workers[i_u].id] = true
+                    planet_unit_ids[workers[i_u].id] = nil
+                    n_kept = n_kept + 1
                 end
                 -- Don't hold back fighters if there are hostile aliens on uncolonised planets
                 if (max_alien_power == 0) then
                     for i_u = 1,math.min(#fighters, n_fighters) do
                         keep_units[fighters[i_u].id] = true
+                        planet_unit_ids[fighters[i_u].id] = nil
+                        n_kept = n_kept + 1
                     end
                 end
+
+                -- If there aren't enough units held back yet ...
+                for i = n_kept+1,n_keep_units do
+                    local id = next(planet_unit_ids)
+                    keep_units[id] = true
+                    planet_unit_ids[id] = nil
+                end
+
             end
-            --DBG.dbms(keep_units, false, 'keep_units')
+            --DBG.dbms(keep_units, false, 'keep_units on ' .. UTLS.unit_str(planet))
             for _,unit in pairs(my_units_this_planet) do
                 if (not keep_units[unit.id])
                     and (not unit.status.poisoned)
