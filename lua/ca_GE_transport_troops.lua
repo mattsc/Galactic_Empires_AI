@@ -228,9 +228,12 @@ local function find_assignments(assignments, transports, instructions, planets_b
                     dist = dist - 2
                     if (dist <= 1) then dist = 1 end
                     dist = dist / transport.max_moves
+                    local dist_rating = 1 / dist
+                    if (dist_rating > 1) then dist_rating = 1 + 0.1 / dist end
+
                     if (not dist_ratings[transport.id]) then dist_ratings[transport.id] = {} end
                     if (not dist_ratings[transport.id].self) then dist_ratings[transport.id].self = {} end
-                    dist_ratings[transport.id]['self'][goal_planet.id] = 1 / dist
+                    dist_ratings[transport.id]['self'][goal_planet.id] = dist_rating
                 -- While those without need to pick up troops at a pickup planet first
                 end
 
@@ -250,10 +253,13 @@ local function find_assignments(assignments, transports, instructions, planets_b
                             if (dist2 <= 1) then dist2 = 1 end
 
                             dist = (dist + dist2) / transport.max_moves
+                            local dist_rating = 1 / dist
+                            if (dist_rating > 1) then dist_rating = 1 + 0.1 / dist end
+
                             if (not dist_ratings[transport.id]) then dist_ratings[transport.id] = {} end
                             if (not dist_ratings[transport.id][pickup_planet.id]) then dist_ratings[transport.id][pickup_planet.id] = {} end
                             -- Won't bother with the exact geometry for this
-                            dist_ratings[transport.id][pickup_planet.id][goal_planet.id] = 1 / dist
+                            dist_ratings[transport.id][pickup_planet.id][goal_planet.id] = dist_rating
                         end
                     end
                 end
