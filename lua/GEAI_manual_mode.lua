@@ -64,9 +64,9 @@ function GEAI_manual_mode.units_info(stdout_only)
     local tmp_unit_proxies = wesnoth.units.find_on_map()
     local str = ''
     for _,u in ipairs(tmp_unit_proxies) do
-        str = str .. string.format('%2d,%2d    HP: %3d/%3d    XP: %3d/%3d        %s      (%s)\n',
+        str = str .. string.format('%2d,%2d    HP: %3d/%3d    XP: %3d/%3d   pow: %5.1f        %s      (%s)\n',
         u.x, u.y,
-        u.hitpoints, u.max_hitpoints, u.experience, u.max_experience,
+        u.hitpoints, u.max_hitpoints, u.experience, u.max_experience, UTLS.unit_power(u),
         u.id, tostring(u.name))
 
         if wml.variables.debug_unit_labels then
@@ -82,7 +82,30 @@ function GEAI_manual_mode.units_info(stdout_only)
     else
         wml.variables.debug_unit_labels = true
         std_print(str)
-        if (not stdout_only) then wesnoth.message(str) end
+        --if (not stdout_only) then wesnoth.message(str) end
+
+        local transports = UTLS.get_transports { side = wesnoth.current.side }
+        local str2 = ''
+        for _,transport in pairs(transports) do
+            if transport.variables.GEAI_purpose then
+                local str1 = UTLS.unit_str(transport)
+                str1 = str1 .. '  ' .. transport.variables.GEAI_purpose ..':'
+                str1 = str1 .. ' ' .. transport.variables.GEAI_goal_id
+                if transport.variables.GEAI_pickup_id then
+                    str1 = str1 .. ' via ' .. transport.variables.GEAI_pickup_id
+                end
+                std_print(str1)
+            else
+                str2 = str2 .. '\n' .. UTLS.unit_str(transport)
+            end
+
+            local passengers = wml.array_access.get('passengers', transport)
+            for _,passenger in ipairs(passengers) do
+                local unit = wesnoth.units.find_on_recall { id = passenger.id }[1]
+                std_print('  passenger: ' .. passenger.type .. '  HP: ' .. passenger.hp .. '/' .. passenger.max_hp .. '  power: ' .. UTLS.unit_power(unit))
+            end
+        end
+        std_print(str2)
     end
 end
 
