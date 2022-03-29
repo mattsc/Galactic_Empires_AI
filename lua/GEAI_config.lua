@@ -18,13 +18,13 @@ local GEAI_cfg = {
         flagship_move =      400000,  -- flagship moves
         space_combat =       310000,
         --combat =           300000,  -- handled by default AI
-        space_combat_low =   290000,  -- if to be executed after default attacks
         ground_combat =      280000,  -- attacks on aliens
         retreat_space_low =  270000,  -- if to be executed after attacks
         upgrade_ship =       260000,  -- upgrades to ships other than the flagship
-        move_to_enemy =      140000,
         transport_troops =   120000,
         recruit =            100000,
+        space_combat_low =    80000,  -- attacks on planets without antimatter attacks
+        move_to_enemy =       60000,
         move_ground =         40000,
         population_control =  20000
     },
@@ -77,7 +77,7 @@ local GEAI_cfg = {
         gadgets = 1,
         hq = 1,
         planet = 1,
-        ships = 1
+        ships = 1.1
     },
 
     -- Upgrades:
