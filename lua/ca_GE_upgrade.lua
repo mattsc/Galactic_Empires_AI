@@ -382,7 +382,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
             local max_rating, best_hex = -math.huge
             if (ship.moves == 0) then
                 for _,spacedock in ipairs(spacedocks) do
-                    if (wesnoth.map.distance_between(ship.x, ship.y, spacedock.x, spacedock.y) == 1) then
+                    if (wesnoth.map.distance_between(ship, spacedock) == 1) then
                         best_hex = { ship.x, ship.y }
                     end
                 end

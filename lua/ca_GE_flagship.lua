@@ -43,7 +43,7 @@ function ca_GE_flagship:evaluation(cfg, data)
     if enemies[1] then
         local min_dist, target = math.huge
         for _,enemy in ipairs(enemies) do
-            local dist = wesnoth.map.distance_between(flagship.x, flagship.y, enemy.x, enemy.y)
+            local dist = wesnoth.map.distance_between(flagship, enemy)
             if (dist < min_dist) then
                 target, min_dist = enemy, dist
             end
@@ -89,7 +89,7 @@ function ca_GE_flagship:evaluation(cfg, data)
                     if (not AH.is_visible_unit(wesnoth.current.side, unit_in_way))
                         or (unit_in_way == flagship)
                     then
-                        local dist = wesnoth.map.distance_between(hex[1], hex[2], target.x, target.y)
+                        local dist = wesnoth.map.distance_between(hex, target)
                         if (dist < min_dist) then
                             min_dist, nh = dist, { hex[1], hex[2] }
                         end

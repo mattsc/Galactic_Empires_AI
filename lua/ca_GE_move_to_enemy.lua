@@ -15,7 +15,7 @@ local function find_best_move(unit_ratings, enemies, unit_move)
         -- to which a move is possible
         local enemy_distances = {}
         for i_e,enemy in ipairs(enemies) do
-            local dist = wesnoth.map.distance_between(unit.x, unit.y, enemy.x, enemy.y)
+            local dist = wesnoth.map.distance_between(unit, enemy)
             table.insert(enemy_distances, { id = enemy.id, dist = dist, index = i_e })
         end
         table.sort(enemy_distances, function(a, b) return a.dist < b.dist end)

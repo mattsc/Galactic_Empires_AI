@@ -141,7 +141,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
             --std_print('  ' .. UTLS.loc_str(hex) .. ': ' .. food .. ' food, ' .. gold .. ' gold')
 
             -- Hexes adjacent to the HQ get a penalty, as new citizens are only produced on those
-            if (wesnoth.map.distance_between(hq.x, hq.y, hex[1], hex[2]) == 1) then
+            if (wesnoth.map.distance_between(hq, hex) == 1) then
                 food = (food or 0) - 0.75
             end
 

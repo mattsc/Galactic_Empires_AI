@@ -118,7 +118,7 @@ function ca_GE_population_control:evaluation(cfg, data)
         -- Also if an enemy transport with passengers is within two times its max_moves of the planet
         local close_enemy_transport = false
         for _,transport in ipairs(enemy_transports) do
-            if (wesnoth.map.distance_between(transport.x, transport.y, planet.x, planet.y) <= transport.max_moves * 2)
+            if (wesnoth.map.distance_between(transport, planet) <= transport.max_moves * 2)
                 and (transport.attacks[1].damage > 0) -- number of passengers
             then
                 --std_print('close transport: ' .. UTLS.unit_str(transport), UTLS.unit_str(planet), transport.attacks[1].damage)

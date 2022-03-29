@@ -127,7 +127,7 @@ local function set_assignment(assignments, instructions, transport_id, goal_id, 
     if (transport.moves > 0) then
         --std_print(UTLS.unit_str(transport) .. ' has moves left')
         changes_state = true
-    elseif (wesnoth.map.distance_between(goal_planet.x, goal_planet.y, transport.x, transport.y) == 1) then
+    elseif (wesnoth.map.distance_between(goal_planet, transport) == 1) then
         -- Transport is next to goal planets, meaning it is ready to beam down a unit
         -- Do not have to check that there are passengers on it as the transport's
         -- assignment is deleted once units have beamed down.
@@ -224,7 +224,7 @@ local function find_assignments(assignments, transports, instructions, planets_b
 
                 -- Transports with passengers on them can go straight to the goal planet
                 if (passenger_power > 0) then
-                    local dist = wesnoth.map.distance_between(goal_planet.x, goal_planet.y, transport.x, transport.y)
+                    local dist = wesnoth.map.distance_between(goal_planet, transport)
                     dist = dist - 2
                     if (dist <= 1) then dist = 1 end
                     dist = dist / transport.max_moves
@@ -244,12 +244,12 @@ local function find_assignments(assignments, transports, instructions, planets_b
                         local available_power = instructions.available_power[pickup_planet.id] or 0
                         if (available_power > 0) then
                             --std_print('  pickup: ' .. UTLS.unit_str(pickup_planet), available_power)
-                            local dist = wesnoth.map.distance_between(pickup_planet.x, pickup_planet.y, transport.x, transport.y)
+                            local dist = wesnoth.map.distance_between(pickup_planet, transport)
                             -- -1 because we only need to move next to the planet
                             dist = dist - 1
                             if (dist <= 1) then dist = 1 end
 
-                            local dist2 = wesnoth.map.distance_between(pickup_planet.x, pickup_planet.y, goal_planet.x, goal_planet.y)
+                            local dist2 = wesnoth.map.distance_between(pickup_planet, goal_planet)
                             if (dist2 <= 1) then dist2 = 1 end
 
                             dist = (dist + dist2) / transport.max_moves
@@ -506,7 +506,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
     local homeworld_threats_power = 0
     for _,enemy_transport in ipairs(enemy_transports) do
-        local dist = wesnoth.map.distance_between(enemy_transport.x, enemy_transport.y, homeworld.x, homeworld.y)
+        local dist = wesnoth.map.distance_between(enemy_transport, homeworld)
         --std_print(UTLS.unit_str(enemy_transport), dist)
 
         -- Don't do path finding if the transport can definitely not get there
@@ -743,7 +743,8 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             -- For now, we just use the hex closest to any enemy planet as recruit hex
             for _,loc in ipairs(recruit_locs) do
                 for _,planet in ipairs(enemy_planets) do
-                    local dist = wesnoth.map.distance_between(planet.x, planet.y, loc[1], loc[2])
+                    local dist = wesnoth.map.distance_between(planet, loc)
+
                     table.insert(ratings, { rating = dist, x = loc[1], y = loc[2], type = best_recruit })
                 end
             end
@@ -1128,12 +1129,12 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
             --   - transport is not already adjacent to pickup planet
             if pickup_planet
                 and (transport.moves > 0)
-                and (wesnoth.map.distance_between(pickup_planet.x, pickup_planet.y, transport.x, transport.y) ~= 1)
+                and (wesnoth.map.distance_between(pickup_planet, transport) ~= 1)
             then
                 local min_rating, best_hex = math.huge, {}
                 for xa,ya in H.adjacent_tiles(pickup_planet.x, pickup_planet.y) do
                     local _,cost = wesnoth.paths.find_path(transport, xa, ya)
-                    local dist_goal = wesnoth.map.distance_between(xa, ya, goal_planet.x, goal_planet.y)
+                    local dist_goal = wesnoth.map.distance_between(xa, ya, goal_planet)
                     cost = cost + dist_goal / 100
 
                     -- if there's a unit on it, significantly increase the cost
@@ -1162,7 +1163,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
             --   - transport is adjacent to pickup planet
             if pickup_planet
                 and (transport.moves > 0)
-                and (wesnoth.map.distance_between(pickup_planet.x, pickup_planet.y, transport.x, transport.y) == 1)
+                and (wesnoth.map.distance_between(pickup_planet, transport) == 1)
             then
                 local direction = wesnoth.map.get_relative_dir({ transport.x, transport.y } , { pickup_planet.x, pickup_planet.y })
 
@@ -1261,14 +1262,14 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     if can_reach then
                         -- Try to get close to artifact
                         for _,artifact_loc in ipairs(artifact_locs) do
-                            local dist = wesnoth.map.distance_between(beam_loc[1], beam_loc[2], artifact_loc[1], artifact_loc[2])
+                            local dist = wesnoth.map.distance_between(beam_loc, artifact_loc)
                             -- Transport may go a bit more than a move farther for each move saved on the surface
                             cost = cost + 1.5 * dist - 10
                         end
 
                         -- Same for aliens, with a slightly smaller contribution
                         for _,alien in ipairs(aliens) do
-                            local dist = wesnoth.map.distance_between(beam_loc[1], beam_loc[2], alien.x, alien.y)
+                            local dist = wesnoth.map.distance_between(beam_loc, alien)
                             -- Transport may go a bit more than a move farther for each move saved on the surface
                             cost = cost + 1.4 * dist - 10
                         end
@@ -1294,7 +1295,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
             --   - transport is adjacent to goal planet
             -- Also move units on the beam-down hex out of the way
             if (not pickup_planet)
-                and (wesnoth.map.distance_between(goal_planet.x, goal_planet.y, transport.x, transport.y) == 1)
+                and (wesnoth.map.distance_between(goal_planet, transport) == 1)
             then
                 for _,unit_id in ipairs(assignment.assigned_unit_ids) do
                     local passengers = wml.array_access.get('passengers', transport)

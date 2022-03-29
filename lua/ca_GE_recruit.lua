@@ -101,7 +101,7 @@ function ca_GE_recruit:evaluation(cfg, data)
     local min_dist, best_loc = math.huge
     for _,loc in ipairs(recruit_locs) do
         for _,ship in ipairs(enemy_ships) do
-            local dist = wesnoth.map.distance_between(ship.x, ship.y, loc[1], loc[2])
+            local dist = wesnoth.map.distance_between(ship, loc)
             --std_print(UTLS.loc_str(loc) .. ' ' .. UTLS.unit_str(ship) .. ' ' .. dist)
             if (dist < min_dist) then
                 min_dist = dist
