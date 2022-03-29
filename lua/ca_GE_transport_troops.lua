@@ -19,7 +19,6 @@ local function show_assigned_transports(assigned_transports, unassigned_transpor
     for _,transport in ipairs(unassigned_transports) do
         std_print('unassigned: ' .. UTLS.unit_str(transport))
     end
-
 end
 
 local function are_variables_set(transport, purpose, goal_id, pickup_id)
