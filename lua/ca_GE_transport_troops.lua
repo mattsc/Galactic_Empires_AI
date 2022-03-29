@@ -429,11 +429,6 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     local all_transports = UTLS.get_transports { side = wesnoth.current.side }
     --std_print('#all_transports', #all_transports)
 
-    if (not all_transports[1]) then
-        DBG.print_debug_eval(ca_name, 0, start_time, 'no transports found')
-        return 0
-    end
-
     -- Find assigned and unassigned transports
     -- Some assigned transports might not have valid goals any more, but
     -- that is purpose dependent and therefore checked later
