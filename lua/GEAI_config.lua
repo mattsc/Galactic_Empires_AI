@@ -77,7 +77,7 @@ local GEAI_cfg = {
         gadgets = 1,
         hq = 1,
         planet = 1,
-        ships = 1.1
+        ships = 1.2
     },
 
     -- Upgrades:
