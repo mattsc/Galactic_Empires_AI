@@ -1149,7 +1149,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2], { ignore_own_units = true })
 
-                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(pickup_planet) .. ' for pickup --> ' .. UTLS.loc_str(next_hop)
+                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward pickup ' .. UTLS.unit_str(pickup_planet) .. ' --> ' .. UTLS.loc_str(next_hop) .. ' (goal: ' .. UTLS.unit_str(goal_planet) .. ')'
                 DBG.print_debug_exec(ca_name, str)
                 UTLS.output_add_move(str)
                 AH.robust_move_and_attack(ai, transport, next_hop, nil, { partial_move = true })
@@ -1281,7 +1281,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2], { ignore_own_units = true })
 
-                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(goal_planet) .. ' --> ' .. UTLS.loc_str(next_hop)
+                local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward goal ' .. UTLS.unit_str(goal_planet) .. ' --> ' .. UTLS.loc_str(next_hop)
                 DBG.print_debug_exec(ca_name, str)
                 UTLS.output_add_move(str)
                 AH.robust_move_and_attack(ai, transport, next_hop, nil, { partial_move = true })
