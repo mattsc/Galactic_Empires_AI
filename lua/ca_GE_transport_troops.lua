@@ -1136,9 +1136,9 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     local dist_goal = wesnoth.map.distance_between(xa, ya, goal_planet)
                     cost = cost + dist_goal / 100
 
-                    -- if there's a unit on it, significantly increase the cost
+                    -- if there's a unit on it, try to use a neighboring hex instead
                     if wesnoth.units.get(xa, ya) then
-                        cost = cost + transport.max_moves
+                        cost = cost + 1
                     end
                     --std_print(UTLS.unit_str(transport) .. ' --> ' .. UTLS.unit_str(pickup_planet), UTLS.loc_str(xa, ya), cost)
 
@@ -1147,7 +1147,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                         best_hex = { xa, ya }
                     end
                 end
-                local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2])
+                local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2], { ignore_own_units = true })
 
                 local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward ' .. UTLS.unit_str(pickup_planet) .. ' for pickup --> ' .. UTLS.loc_str(next_hop)
                 DBG.print_debug_exec(ca_name, str)
