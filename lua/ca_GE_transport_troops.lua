@@ -891,7 +891,8 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         --std_print('#artifact_locs: ' .. #artifact_locs)
         -- Add colonising bonus by population type
         for _,unit_infos in pairs(instructions.available_units) do
-            for _,unit_info in pairs(unit_infos) do
+            local max_rating, best_scientist_index = - math.huge
+            for i_ui,unit_info in pairs(unit_infos) do
                 local rating = 1 + unit_info.power / 1000
 
                 -- Since transports heal, and injured units cannot work or do science,
@@ -912,10 +913,13 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                     end
                 end
 
-                -- Bonus for scientists if there are artifacts
+                -- If there are artifacts, find the highest-rated scientist
                 if (#artifact_locs > 0) then
                     if (unit_info.type == 'science_unit') then
-                        rating = rating * 1.3
+                        if (rating > max_rating) then
+                            max_rating = rating
+                            best_scientist_index = i_ui
+                        end
                     end
                 end
 
@@ -927,6 +931,11 @@ function ca_GE_transport_troops:evaluation(cfg, data)
                 end
 
                 unit_info.rating = rating
+            end
+
+            -- If there are artifacts, strongly prefer to put one scientist, but only one, on each transport
+            if best_scientist_index then
+                unit_infos[best_scientist_index].rating = unit_infos[best_scientist_index].rating * 2
             end
         end
         --DBG.dbms(instructions, false, 'instructions')
