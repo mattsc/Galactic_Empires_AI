@@ -866,7 +866,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         instructions.settings = {
             purpose = 'colonise',
             n_needed = n_needed_colonise,
-            power_desired = math.max(max_alien_power * 1.2, 1),
+            power_desired = math.max(max_alien_power * 1.5, 1),
             stop_when_enough_power = true,
             enough_power_only = true -- ignore planets that have so many aliens that we cannot take them
         }
