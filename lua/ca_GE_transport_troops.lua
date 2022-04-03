@@ -473,7 +473,11 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
     -- Find hostile aliens on neutral planets
     local alien_power_by_planet = {}
-    local aliens = wesnoth.units.find_on_map { race = 'alien', { 'not', { ability = 'friendly' } } }
+    local aliens = wesnoth.units.find_on_map {
+        race = 'alien',
+        { 'not', { role = 'ship' } },
+        { 'not', { ability = 'friendly' } }
+    }
     for _,alien in ipairs(aliens) do
         local planet = UTLS.get_planet_from_unit(alien)
         if planet:matches {
