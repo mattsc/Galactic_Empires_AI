@@ -1157,6 +1157,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     end
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2], { ignore_own_units = true })
+                if (not next_hop) then next_hop = { transport.x, transport.y } end
 
                 local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward pickup ' .. UTLS.unit_str(pickup_planet) .. ' --> ' .. UTLS.loc_str(next_hop) .. ' (goal: ' .. UTLS.unit_str(goal_planet) .. ')'
                 DBG.print_debug_exec(ca_name, str)
@@ -1289,6 +1290,7 @@ function ca_GE_transport_troops:execution(cfg, data, ai_debug)
                     end
                 end
                 local next_hop = AH.next_hop(transport, best_hex[1], best_hex[2], { ignore_own_units = true })
+                if (not next_hop) then next_hop = { transport.x, transport.y } end
 
                 local str = purpose .. ': move ' .. UTLS.unit_str(transport) .. ' toward goal ' .. UTLS.unit_str(goal_planet) .. ' --> ' .. UTLS.loc_str(next_hop)
                 DBG.print_debug_exec(ca_name, str)
