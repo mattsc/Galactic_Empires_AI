@@ -469,6 +469,10 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     --std_print('#neutral_planets', #neutral_planets)
     --std_print('#enemy_planets', #enemy_planets)
     --std_print('n_sides', n_sides)
+    --std_print('homeworld: ' .. UTLS.unit_str(homeworld, 'no homeworld'))
+
+    -- In games with more than 2 sides, it is possible that a side has been defeated but the game goes on
+    if (not homeworld) then return 0 end
 
 
     -- Find hostile aliens on neutral planets
