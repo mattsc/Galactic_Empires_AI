@@ -47,6 +47,9 @@ end
 
 function GEAI_utils.loc_str(loc, y)
     -- if loc is a number, it's the x value followed by the y value
+
+    if (not loc) then return '[nil,nil]' end
+
     if (type(loc) == 'number') then
         return '[' .. loc .. ',' .. y .. ']'
     end
