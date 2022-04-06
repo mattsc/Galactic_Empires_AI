@@ -77,7 +77,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
                 if (not worker_planets[unit.role]) then
                     worker_planets[unit.role] = {}
                 end
-                table.insert(worker_planets[unit.role], { id = unit.id })
+                table.insert(worker_planets[unit.role], { id = unit.id, x = unit.x, y = unit.y })
             else
                 -- We also need these to calculate total worker production
                 if (not worker_noMP_planets[unit.role]) then
@@ -157,9 +157,14 @@ function ca_GE_move_ground:evaluation(cfg, data)
             hex_info_map[hex[1]][hex[2]].gold = gold
         end
 
-        -- How much food do workers without MP produce. This is needed to find
-        -- the correct food/good ratio for the planet.
+        -- How much food/gold do workers produce in their current positions?
+        -- Need this for all workers, with and without moves left.
         local total_food, total_gold = 0, 0
+        for _,unit in ipairs(workers) do
+            total_food = total_food + (GM.get_value(hex_info_map, unit.x, unit.y, 'food') or 0)
+            total_gold = total_gold + (GM.get_value(hex_info_map, unit.x, unit.y, 'gold') or 0)
+        end
+        --std_print(UTLS.unit_str(planet) .. ' starting total food, gold: ' .. total_food, total_gold)
         for _,unit in ipairs(worker_noMP_planets[planet_id] or {}) do
             total_food = total_food + (GM.get_value(hex_info_map, unit.x, unit.y, 'food') or 0)
             total_gold = total_gold + (GM.get_value(hex_info_map, unit.x, unit.y, 'gold') or 0)
@@ -219,6 +224,13 @@ function ca_GE_move_ground:evaluation(cfg, data)
             local unit = wesnoth.units.find_on_map { id = worker.id }[1]
             local reach = wesnoth.paths.find_reach(unit)
             --std_print('  #reach: ' .. #reach)
+
+            -- Remove food/gold of this worker in its current location from the total.
+            -- It will be added in again later for the best location found (which could be its current hex).
+            local current_food = (GM.get_value(hex_info_map, unit.x, unit.y, 'food') or 0)
+            local current_gold = (GM.get_value(hex_info_map, unit.x, unit.y, 'gold') or 0)
+            total_food = total_food - current_food
+            total_gold = total_gold - current_gold
 
             local unit_rating_map = {}
             local max_rating, best_loc = - math.huge
