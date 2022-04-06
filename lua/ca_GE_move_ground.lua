@@ -234,8 +234,8 @@ function ca_GE_move_ground:evaluation(cfg, data)
                     local uiw_id = hex_info_map[loc[1]][loc[2]].id
                     local can_move_away = hex_info_map[loc[1]][loc[2]].can_move_away
                     if (not uiw_id) or (uiw_id == unit.id) or can_move_away then
-                        if can_move_away then
-                            if workers_by_id[uiw_id] and (uiw_id ~= unit.id) then
+                        if can_move_away and (uiw_id ~= unit.id) then
+                            if workers_by_id[uiw_id] then
                                 rating = rating - 1000
                             else
                                 rating = rating - 0.1
