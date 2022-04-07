@@ -608,6 +608,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             -- And this done is so that no units are marked as available below if the AI homeworld is threatened
             enemy_power = enemy_power + homeworld_threats_power
         end
+        --std_print(planet.id .. ': my vs. enemy power: ' .. my_power .. ' <--> ' .. enemy_power)
 
         -- Available units on planets:
         --  - if there are enemies on the planet, we do not move any of ours away
@@ -958,7 +959,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
             local pickup_id = transport.variables.GEAI_pickup_id
 
             local power_provided = (instructions.available_power[transport.id] or 0) + (instructions.available_power[pickup_id or 'abc'] or 0)
---            std_print(power_provided, instructions.power_needed[goal_id])
+            --std_print(power_provided, instructions.power_needed[goal_id])
 
             if planets_by_id[goal_id]:matches {
                     { 'filter_side', {  -- this excludes neutral planets
