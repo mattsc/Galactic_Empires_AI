@@ -507,7 +507,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     -- Check whether an invasion of the AI homeworld is imminent
-    -- Consider transports within 2 moves of the homeworld
+    -- Consider transports within one move of the homeworld
     local enemy_transports = AH.get_attackable_enemies { ability = 'transport' }
     --std_print('#enemy_transports: ' .. #enemy_transports)
 
@@ -517,15 +517,15 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         --std_print(UTLS.unit_str(enemy_transport), dist)
 
         -- Don't do path finding if the transport can definitely not get there
-        if (dist - 1 <= enemy_transport.max_moves * 2) then
+        if (dist - 1 <= enemy_transport.max_moves) then
             for xa,ya in H.adjacent_tiles(homeworld.x, homeworld.y) do
                 -- ignore units, as some defenders may be killed by enemy ships
                 local _,cost = wesnoth.paths.find_path(enemy_transport, xa, ya, { ignore_units = true })
                 --std_print('  ' .. UTLS.loc_str({ xa, ya }), cost)
 
-                -- If the transport can get to the homeworld in 2 moves, find the power of its passengers
+                -- If the transport can get to the homeworld in one move, find the power of its passengers
                 -- Note that onboard healing is not taken into account here, but this is close enough
-                if (cost <= enemy_transport.max_moves * 2) then
+                if (cost <= enemy_transport.max_moves) then
                     local passengers = wml.array_access.get('passengers', enemy_transport)
                     for _,passenger in ipairs(passengers) do
                         local enemy = wesnoth.units.find_on_recall { id = passenger.id }[1]
