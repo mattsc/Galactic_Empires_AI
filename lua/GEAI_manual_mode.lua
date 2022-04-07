@@ -78,7 +78,7 @@ function GEAI_manual_mode.units_info(stdout_only)
 
     if wml.variables.debug_unit_labels then
         wml.variables.debug_unit_labels = nil
-        wesnoth.clear_messages()
+        wesnoth.interface.clear_chat_messages()
     else
         wml.variables.debug_unit_labels = true
         std_print(str)
