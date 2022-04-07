@@ -851,6 +851,10 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
             find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
         end
+    else
+        for _,transport in ipairs(assigned_transports.defend_homeworld or {}) do
+            table.insert(unassigned_transports, transport)
+        end
     end
     --DBG.dbms(assignments, false, 'assignments defend_homeworld')
     --DBG.dbms(instructions, false, 'instructions defend_homeworld')
@@ -985,6 +989,10 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
         -- Then, find new ones
         find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
+    else
+        for _,transport in ipairs(assigned_transports.colonise or {}) do
+            table.insert(unassigned_transports, transport)
+        end
     end
     --show_assigned_transports(assigned_transports, unassigned_transports)
     --DBG.dbms(assignments, false, 'assignments colonise')
