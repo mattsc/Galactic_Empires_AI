@@ -710,6 +710,53 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     local n_missing = n_needed_overall - #all_transports
     --std_print('transports needed / missing: ' .. n_needed_overall .. ' / ' .. n_missing)
 
+
+    -- Don't recruit transports if there are more enemy ships (by power) than own ships close to the homeworld
+    if (n_missing > 0) then
+        local enemy_ships = UTLS.get_ships {
+            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
+        }
+        --std_print('    #enemy_ships: ' .. #enemy_ships)
+
+        -- Enemy ships count when they are one move away, and at half power two moves away.
+        -- Include enemy transports.
+        local enemy_ship_power = 0
+        for _,ship in ipairs(enemy_ships) do
+            local dist = wesnoth.map.distance_between(ship, homeworld)
+
+            if (dist <= ship.max_moves + 1) then
+                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship)
+            elseif (dist <= 2 * ship.max_moves + 1) then
+                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship) / 2
+            end
+        end
+        --std_print('    enemy_ship_power: ' .. enemy_ship_power)
+
+        local own_ships = UTLS.get_ships {
+            side = wesnoth.current.side,
+            { 'not', { ability = 'transport' } }
+        }
+        --std_print('    #own_ships: ' .. #own_ships)
+
+        -- Own ships only count when they are one move away.
+        -- Do not include transports.
+        local own_ship_power = 0
+        for _,ship in ipairs(own_ships) do
+            local dist = wesnoth.map.distance_between(ship, homeworld)
+
+            if (dist <= ship.max_moves + 1) then
+                own_ship_power = own_ship_power + UTLS.unit_power(ship)
+            end
+        end
+        --std_print('    own_ship_power: ' .. own_ship_power)
+
+        if (enemy_ship_power > own_ship_power) then
+            n_missing = 0
+        end
+    end
+    --std_print('transports missing: ' .. n_missing)
+
+
     if (n_missing > 0) then
         --std_print('  need more transports, checking whether we can recruit more; need: ' .. n_missing)
 
