@@ -1,0 +1,10 @@
+----- 0.1.1, 1 May 2022 -----
+
+- The add-on is now required for all players
+- transport_troops CA: stop recruiting transporters when the homeworld is
+  threatened and AI does not have enough combat ships close by
+
+
+----- 0.1.0, 7 April 2022 -----
+
+- First version on add-ons server
