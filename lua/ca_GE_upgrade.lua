@@ -83,6 +83,11 @@ function ca_GE_upgrade:evaluation(cfg, data)
     end
     --DBG.dbms(all_upgrades, false, 'all_upgrades')
 
+    -- xxxx This is a work-around for an inconsistency in GE, with the cloner entry still
+    -- existing in the upgrades cost file, but the upgrade itself having been removed.
+    -- It can be removed after the next GE update.
+    all_upgrades.hq.cloner = nil
+
 
     ----- Headquarter and planet upgrades -----
     local headquarters = UTLS.get_headquarters { side = wesnoth.current.side }
