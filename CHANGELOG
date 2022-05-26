@@ -1,3 +1,9 @@
+----- 0.1.2, 26 May 2022 -----
+
+- Make AI compatible with Galactic Empires 4.4 (specifically cloner removal)
+- Allow AI to be used with GE era only
+
+
 ----- 0.1.1, 1 May 2022 -----
 
 - The add-on is now required for all players
