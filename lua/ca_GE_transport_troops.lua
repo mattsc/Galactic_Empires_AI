@@ -697,149 +697,6 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     --DBG.dbms(instructions, false, 'instructions')
 
 
-    ------ Recruit more transports ------
-    local n_needed_colonise = math.ceil(#all_planets / n_sides / 3)
-    local n_needed_combat = math.ceil(n_available_units / 3)
-    if (#neutral_planets / #all_planets > 0.5) then
-        n_needed_combat = 0
-    end
-
-    local n_needed_overall = math.max(n_needed_colonise, n_needed_combat)
-    --std_print('n_needed colonise, combat, overall:', n_needed_colonise, n_needed_combat, n_needed_overall)
-
-    local n_missing = n_needed_overall - #all_transports
-    --std_print('transports needed / missing: ' .. n_needed_overall .. ' / ' .. n_missing)
-
-
-    -- Don't recruit transports if there are more enemy ships (by power) than own ships close to the homeworld
-    if (n_missing > 0) then
-        local enemy_ships = UTLS.get_ships {
-            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
-        }
-        --std_print('    #enemy_ships: ' .. #enemy_ships)
-
-        -- Enemy ships count when they are one move away, and at half power two moves away.
-        -- Include enemy transports.
-        local enemy_ship_power = 0
-        for _,ship in ipairs(enemy_ships) do
-            local dist = wesnoth.map.distance_between(ship, homeworld)
-
-            if (dist <= ship.max_moves + 1) then
-                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship)
-            elseif (dist <= 2 * ship.max_moves + 1) then
-                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship) / 2
-            end
-        end
-        --std_print('    enemy_ship_power: ' .. enemy_ship_power)
-
-        local own_ships = UTLS.get_ships {
-            side = wesnoth.current.side,
-            { 'not', { ability = 'transport' } }
-        }
-        --std_print('    #own_ships: ' .. #own_ships)
-
-        -- Own ships only count when they are one move away.
-        -- Do not include transports.
-        local own_ship_power = 0
-        for _,ship in ipairs(own_ships) do
-            local dist = wesnoth.map.distance_between(ship, homeworld)
-
-            if (dist <= ship.max_moves + 1) then
-                own_ship_power = own_ship_power + UTLS.unit_power(ship)
-            end
-        end
-        --std_print('    own_ship_power: ' .. own_ship_power)
-
-        if (enemy_ship_power > own_ship_power) then
-            n_missing = 0
-        end
-    end
-    --std_print('transports missing: ' .. n_missing)
-
-
-    if (n_missing > 0) then
-        --std_print('  need more transports, checking whether we can recruit more; need: ' .. n_missing)
-
-        -- Simply finds the first unit type that has the transport ability as
-        -- each faction only has one transport unit type on the recruit list
-        local best_recruit
-        for _,recruit_id in ipairs(wesnoth.sides[wesnoth.current.side].recruit) do
-            --std_print('  possible recruit: ' .. recruit_id)
-            local abilities = wml.get_child(wesnoth.unit_types[recruit_id].__cfg, "abilities")
-            if abilities then
-                for ability in wml.child_range(abilities, 'dummy') do
-                    if (ability.id == 'transport') then
-                        --std_print('    -- is transport')
-                        best_recruit = recruit_id
-                        break
-                    end
-                end
-                if best_recruit then break end
-            end
-        end
-        --std_print('best_recruit: ' .. best_recruit)
-
-        local n_recruits = 0
-        if (not best_recruit) then
-            --std_print('no transport unit type found on recruit list')
-        else
-            local cost = wesnoth.unit_types[best_recruit].cost
-            n_recruits = math.floor(wesnoth.sides[wesnoth.current.side].gold / cost)
-            --std_print('can afford ' .. n_recruits .. ' transports')
-        end
-        n_recruits = math.min(n_recruits, n_missing)
-
-        local ratings = {}
-        if (n_recruits > 0) then
-            --std_print('  after checking gold: trying to recruit ' .. n_recruits .. ' transports: ' .. best_recruit)
-
-            local recruit_locs = UTLS.get_recruit_locs()
-            --DBG.dbms(recruit_locs, false, 'recruit_locs')
-            -- For now, we just use the hex closest to any enemy planet as recruit hex
-            for _,loc in ipairs(recruit_locs) do
-                for _,planet in ipairs(enemy_planets) do
-                    local dist = wesnoth.map.distance_between(planet, loc)
-
-                    table.insert(ratings, { rating = dist, x = loc[1], y = loc[2], type = best_recruit })
-                end
-            end
-            table.sort(ratings, function(a, b) return a.rating < b.rating end)
-            --DBG.dbms(ratings, false, 'ratings')
-
-            n_recruits = math.min(n_recruits, #ratings, #recruit_locs)
-        end
-
-        if (n_recruits > 0) then
-            --std_print('  after checking hexes: trying to recruit ' .. n_recruits .. ' transports: ' .. best_recruit)
-
-            assignments = { recruit = { } }
-
-            i = 0
-            while (#assignments.recruit < n_recruits) and (i < #ratings) do
-                i = i + 1
-                -- The ratings table usually contains each recruit hex several times.
-                -- Need to make sure we don't assign it multiple times.
-                local hex_available = true
-                for _,assignment in ipairs(assignments.recruit) do
-                    if (ratings[i].x == assignment.x) and (ratings[i].y == assignment.y) then
-                        hex_available = false
-                        break
-                    end
-                end
-                if hex_available then
-                    table.insert(assignments.recruit, ratings[i])
-                end
-            end
-            --DBG.dbms(assignments, false, 'assignments')
-
-            DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.recruit .. ' transports to be recruited')
-            return ca_score
-        end
-
-    end
-    ------ End recruiting ------
-
-
     ------ Defend the AI homeworld ------
     -- If we urgently need power at the homeworld, everything else is second priority
     local homeworld_power_own = planet_powers[homeworld.id].own
@@ -910,6 +767,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
         DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.defend_homeworld .. ' transports found for defending the homeworld')
         return ca_score
     end
+    ------ End defend the AI homeworld ------
 
 
     ------ Colonise neutral planets ------
@@ -920,6 +778,8 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     -- with enough power for planets with aliens, but not disable an assignment if it provides
     -- enough power for the currently considered transport. As a result, we use both a
     -- "desired" and a "needed" power setting for colonising.
+
+    local n_needed_colonise = math.ceil(#all_planets / n_sides / 3)
 
     --std_print('colonise: number of neutral planets: ' .. #neutral_planets)
     if (#neutral_planets > 0) then
@@ -1127,14 +987,156 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     find_assignments(assignments, unassigned_transports, instructions, planets_by_id)
     --DBG.dbms(assignments, false, 'assignments combat')
 
-    if (not assignments.combat) or (not assignments.combat[1]) then
-        DBG.print_debug_eval(ca_name, 0, start_time, 'no qualifying transport moves found')
-        return 0
+    if assignments.combat and assignments.combat[1] then
+        DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.combat .. ' transports found for combat troops')
+        return ca_score
+    end
+    ------ End move combat units ------
+
+
+    ------ Recruit more transports ------
+    local n_needed_combat = math.ceil(n_available_units / 3)
+    if (#neutral_planets / #all_planets > 0.5) then
+        n_needed_combat = 0
     end
 
-    DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.combat .. ' transports found for combat troops')
-    return ca_score
-    ------ End move combat units ------
+    local n_needed_overall = math.max(n_needed_colonise, n_needed_combat)
+    --std_print('n_needed colonise, combat, overall:', n_needed_colonise, n_needed_combat, n_needed_overall)
+
+    local n_missing = n_needed_overall - #all_transports
+    --std_print('transports needed / missing: ' .. n_needed_overall .. ' / ' .. n_missing)
+
+
+    -- Don't recruit transports if there are more enemy ships (by power) than own ships close to the homeworld
+    if (n_missing > 0) then
+        local enemy_ships = UTLS.get_ships {
+            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
+        }
+        --std_print('    #enemy_ships: ' .. #enemy_ships)
+
+        -- Enemy ships count when they are one move away, and at half power two moves away.
+        -- Include enemy transports.
+        local enemy_ship_power = 0
+        for _,ship in ipairs(enemy_ships) do
+            local dist = wesnoth.map.distance_between(ship, homeworld)
+
+            if (dist <= ship.max_moves + 1) then
+                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship)
+            elseif (dist <= 2 * ship.max_moves + 1) then
+                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship) / 2
+            end
+        end
+        --std_print('    enemy_ship_power: ' .. enemy_ship_power)
+
+        local own_ships = UTLS.get_ships {
+            side = wesnoth.current.side,
+            { 'not', { ability = 'transport' } }
+        }
+        --std_print('    #own_ships: ' .. #own_ships)
+
+        -- Own ships only count when they are one move away.
+        -- Do not include transports.
+        local own_ship_power = 0
+        for _,ship in ipairs(own_ships) do
+            local dist = wesnoth.map.distance_between(ship, homeworld)
+
+            if (dist <= ship.max_moves + 1) then
+                own_ship_power = own_ship_power + UTLS.unit_power(ship)
+            end
+        end
+        --std_print('    own_ship_power: ' .. own_ship_power)
+
+        if (enemy_ship_power > own_ship_power) then
+            n_missing = 0
+        end
+    end
+    --std_print('transports missing: ' .. n_missing)
+
+
+    if (n_missing > 0) then
+        --std_print('  need more transports, checking whether we can recruit more; need: ' .. n_missing)
+
+        -- Simply finds the first unit type that has the transport ability as
+        -- each faction only has one transport unit type on the recruit list
+        local best_recruit
+        for _,recruit_id in ipairs(wesnoth.sides[wesnoth.current.side].recruit) do
+            --std_print('  possible recruit: ' .. recruit_id)
+            local abilities = wml.get_child(wesnoth.unit_types[recruit_id].__cfg, "abilities")
+            if abilities then
+                for ability in wml.child_range(abilities, 'dummy') do
+                    if (ability.id == 'transport') then
+                        --std_print('    -- is transport')
+                        best_recruit = recruit_id
+                        break
+                    end
+                end
+                if best_recruit then break end
+            end
+        end
+        --std_print('best_recruit: ' .. best_recruit)
+
+        local n_recruits = 0
+        if (not best_recruit) then
+            --std_print('no transport unit type found on recruit list')
+        else
+            local cost = wesnoth.unit_types[best_recruit].cost
+            n_recruits = math.floor(wesnoth.sides[wesnoth.current.side].gold / cost)
+            --std_print('can afford ' .. n_recruits .. ' transports')
+        end
+        n_recruits = math.min(n_recruits, n_missing)
+
+        local ratings = {}
+        if (n_recruits > 0) then
+            --std_print('  after checking gold: trying to recruit ' .. n_recruits .. ' transports: ' .. best_recruit)
+
+            local recruit_locs = UTLS.get_recruit_locs()
+            --DBG.dbms(recruit_locs, false, 'recruit_locs')
+            -- For now, we just use the hex closest to any enemy planet as recruit hex
+            for _,loc in ipairs(recruit_locs) do
+                for _,planet in ipairs(enemy_planets) do
+                    local dist = wesnoth.map.distance_between(planet, loc)
+
+                    table.insert(ratings, { rating = dist, x = loc[1], y = loc[2], type = best_recruit })
+                end
+            end
+            table.sort(ratings, function(a, b) return a.rating < b.rating end)
+            --DBG.dbms(ratings, false, 'ratings')
+
+            n_recruits = math.min(n_recruits, #ratings, #recruit_locs)
+        end
+
+        if (n_recruits > 0) then
+            --std_print('  after checking hexes: trying to recruit ' .. n_recruits .. ' transports: ' .. best_recruit)
+
+            assignments = { recruit = { } }
+
+            i = 0
+            while (#assignments.recruit < n_recruits) and (i < #ratings) do
+                i = i + 1
+                -- The ratings table usually contains each recruit hex several times.
+                -- Need to make sure we don't assign it multiple times.
+                local hex_available = true
+                for _,assignment in ipairs(assignments.recruit) do
+                    if (ratings[i].x == assignment.x) and (ratings[i].y == assignment.y) then
+                        hex_available = false
+                        break
+                    end
+                end
+                if hex_available then
+                    table.insert(assignments.recruit, ratings[i])
+                end
+            end
+            --DBG.dbms(assignments, false, 'assignments')
+
+            DBG.print_debug_eval(ca_name, ca_score, start_time, #assignments.recruit .. ' transports to be recruited')
+            return ca_score
+        end
+    end
+    ------ End recruit more transports ------
+
+
+    DBG.print_debug_eval(ca_name, 0, start_time, 'no more transport actions found')
+    return 0
 end
 
 
