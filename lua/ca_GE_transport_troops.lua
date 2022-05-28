@@ -780,6 +780,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     -- "desired" and a "needed" power setting for colonising.
 
     local n_needed_colonise = math.ceil(#all_planets / n_sides / 3)
+    n_needed_colonise = math.min(n_needed_colonise, #neutral_planets)
 
     --std_print('colonise: number of neutral planets: ' .. #neutral_planets)
     if (#neutral_planets > 0) then
