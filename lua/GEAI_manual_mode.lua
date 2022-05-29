@@ -70,7 +70,11 @@ function GEAI_manual_mode.units_info(stdout_only)
         u.id, tostring(u.name))
 
         if wml.variables.debug_unit_labels then
-            wesnoth.label { x = u.x, y = u.y, text = '' }
+            if (u:matches { has_weapon = 'food' }) then
+                wesnoth.label { x = u.x, y = u.y, text = u.role }
+            else
+                wesnoth.label { x = u.x, y = u.y, text = '' }
+            end
         else
             wesnoth.label { x = u.x, y = u.y, text = u.id }
         end
