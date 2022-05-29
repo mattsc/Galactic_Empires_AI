@@ -191,10 +191,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     hq_rating = hq_rating + 10
                 end
 
-                 if (hq_upgrade == 'cloner') and (food_store_capacity > 2) then
-                    hq_rating = hq_rating + 10
-                end
-
                 if (#enemies < 2) then
                     if (n_work >= 4) then
                         if (hq_upgrade == 'replicator')
@@ -212,10 +208,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     if (hq_upgrade == 'lab') and (n_science >= 4) then
                         hq_rating = hq_rating + 10
                     end
-                end
-
-                if (hq_upgrade == 'cloner') and planet.variables.trade_hub then
-                    hq_rating = hq_rating - 1e6
                 end
 
                 -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
@@ -326,11 +318,9 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                 end
 
-                -- Do not buy trade hub if HQ has cloner, or if planet is not at max population
+                -- Do not buy trade hub if planet is not at max population
                 if (planet_upgrade == 'trade_hub') then
-                    if hq.variables.cloner
-                        or (hq.variables.population_current < hq.variables.population_max)
-                    then
+                    if (hq.variables.population_current < hq.variables.population_max) then
                         planet_rating = planet_rating - 1e6
                     end
                 end

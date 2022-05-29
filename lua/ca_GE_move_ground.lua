@@ -8,8 +8,7 @@
 --      Move all workers at the same time, to save evaluation time.
 --      Only do a partial move, so that they can move again in case something changes.
 --   2. Move injured units next to healers
---   3. If all hexes around an HQ are occupied, try to move a unit out of the way,
---      excluding workers (or 2 units, if the HQ has a cloner)
+--   3. If all hexes around an HQ are occupied, try to move a unit out of the way, excluding workers
 --   4. If enemy transports with passengers are within one move, move units away
 --      from the corners
 
@@ -473,7 +472,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
     end
 
 
-    -- Check if the are enough empty tiles around the HQs (one normally,
+    -- Check if the are enough empty tiles around the HQs (one normally; previously also
     -- two if HQ has a cloner). If not, try to move a unit out of the way.
     -- We only move one unit per call, in order to avoid them going for the same hex.
     -- If that proves too expensive, we can consider units in combination later.
@@ -486,8 +485,7 @@ function ca_GE_move_ground:evaluation(cfg, data)
             end
         end
         local n_needed = 1
-        if hq.variables.cloner then n_needed = 2 end
-        --std_print('n_available, n_needed', n_available, n_needed)
+        --std_print(UTLS.unit_str(hq) .. ': n_available, n_needed', n_available, n_needed)
 
         -- Only if that is the case (in order to save calculation time in most
         -- circumstances), check where units can move to
