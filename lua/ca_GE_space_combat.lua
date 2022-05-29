@@ -144,7 +144,7 @@ function ca_GE_space_combat:evaluation(cfg, data, ai_debug)
         side = wesnoth.current.side,
         role = 'ship',
         { 'not', { ability = 'flagship' } },
-        { 'not', { { 'has_attack', { name = 'passengers' } } } }
+        { 'not', { ability = 'transport' } },
     }
     --std_print('#ships: ' .. #ships)
     --for _,ship in ipairs(ships) do std_print(UTLS.unit_str(ship)) end
