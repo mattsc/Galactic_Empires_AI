@@ -504,7 +504,9 @@ function ca_GE_move_ground:evaluation(cfg, data)
                     for _,r in ipairs(reach) do
                         local unit_in_way = wesnoth.units.get(r[1], r[2])
                         --std_print(r[1], r[2], r[3], UTLS.unit_str(unit_in_way))
-                        if (not unit_in_way) then -- this also excludes the hex the unit is on itself
+                        if (not unit_in_way) -- this also excludes the hex the unit is on itself
+                            and wesnoth.map.distance_between(hq, r) > 1
+                        then
                             local rating = r[3]
                             if (rating > max_rating) then
                                 max_rating = rating
