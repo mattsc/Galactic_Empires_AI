@@ -92,24 +92,7 @@ function ca_GE_population_control:evaluation(cfg, data)
         end
         --DBG.dbms(population, false, 'population')
 
-        -- Need to renormalize the fractions now
-        local sum_fractions = 0
-        for _,pop in pairs(population) do sum_fractions = sum_fractions + pop.desired_fraction end
-        for _,pop in pairs(population) do
-            pop.desired_fraction = pop.desired_fraction / sum_fractions
-        end
-        --DBG.dbms(population, false, 'population')
-
-
-        -- Base rating is simply the number of units missing based on the ideal ratio
-        -- The +1 is because the ratio needs to be based on the situation once the current
-        -- unit is produced; but more importantly, so that it works when #units == 0
-        for _,pop in pairs(population) do
-            pop.rating = pop.desired_fraction * (#units + 1) - pop.n
-        end
-        --DBG.dbms(population, false, 'population')
-
-        -- If there are enemies on the planet, very strongly prefer soldiers
+        -- If there are enemies on the planet, increase importance of soldiers
         local enemies = UTLS.get_units_on_planet(planet, {
             { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
         })
@@ -128,7 +111,24 @@ function ca_GE_population_control:evaluation(cfg, data)
         end
 
         if (#enemies > 0) or close_enemy_transport then
-            population.combat_unit.rating = population.combat_unit.rating + 1000
+            population.combat_unit.desired_fraction = population.combat_unit.desired_fraction * 2
+        end
+        --DBG.dbms(population, false, 'population')
+
+        -- Need to renormalize the fractions now
+        local sum_fractions = 0
+        for _,pop in pairs(population) do sum_fractions = sum_fractions + pop.desired_fraction end
+        for _,pop in pairs(population) do
+            pop.desired_fraction = pop.desired_fraction / sum_fractions
+        end
+        --DBG.dbms(population, false, 'population')
+
+
+        -- Base rating is simply the number of units missing based on the ideal ratio
+        -- The +1 is because the ratio needs to be based on the situation once the current
+        -- unit is produced; but more importantly, so that it works when #units == 0
+        for _,pop in pairs(population) do
+            pop.rating = pop.desired_fraction * (#units + 1) - pop.n
         end
         --DBG.dbms(population, false, 'population')
 
