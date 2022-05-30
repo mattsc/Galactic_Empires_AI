@@ -181,6 +181,12 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     hq_rating = hq_rating + 100 * n_injured * (1 + #enemies)
                 end
 
+                if (hq_upgrade == 'barracks')
+                    and ((#enemies < 2) or (total_food >= 10))
+                then
+                    hq_rating = hq_rating + 10 + #enemies * 5 + total_food / 10
+                end
+
                 if (hq_upgrade == 'food_processor') then
                     local bonus = math.max(0, 50 - total_food)
                     --std_print('food processor bonus: ' .. bonus)
