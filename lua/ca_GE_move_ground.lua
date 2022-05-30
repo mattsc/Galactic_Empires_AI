@@ -132,9 +132,11 @@ function ca_GE_move_ground:evaluation(cfg, data)
         local hq = wesnoth.units.get(planet.variables.hq_x, planet.variables.hq_y)
 
         -- If there are enemy ships next to the planet, it is blockaded
+        -- Except petrified ships (automatically taken into account by get_ships) and transporters
         --  --> it will not produce gold --> raise food value
         local adj_enemy_ships = UTLS.get_ships {
             { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
+            { 'not', { ability = 'transport' } },
             { 'filter_location', { x = planet.x, y = planet.y, radius = 1 } }
         }
         --std_print('#adj_enemy_ships', #adj_enemy_ships, UTLS.unit_str(planet))
