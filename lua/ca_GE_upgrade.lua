@@ -381,7 +381,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
     for _,ship in ipairs(all_ships) do
         --std_print(UTLS.unit_str(ship), ship.variables.gadgets)
         if (ship.variables.gadgets < ship.level) then
-            local max_rating, best_hex = -math.huge
+            local max_rating_hex, best_hex = -math.huge
             if (ship.moves == 0) then
                 for _,spacedock in ipairs(spacedocks) do
                     if (wesnoth.map.distance_between(ship, spacedock) == 1) then
@@ -395,8 +395,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         local moves_left = reachmap:get(xa, ya)
                         if moves_left then
                             --std_print(UTLS.loc_str(xa, ya), moves_left)
-                            if (max_rating < moves_left) then
-                                max_rating = moves_left
+                            if (max_rating_hex < moves_left) then
+                                max_rating_hex = moves_left
                                 best_hex = { xa, ya }
                             end
                         end
