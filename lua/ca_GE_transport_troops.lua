@@ -996,7 +996,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     ------ Recruit more transports ------
-    local n_needed_combat = math.ceil(n_available_units / 3)
+    local n_needed_combat = math.ceil(math.sqrt(n_available_units))
     if (#neutral_planets / #all_planets > 0.5) then
         n_needed_combat = 0
     end
