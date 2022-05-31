@@ -545,8 +545,6 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     --- Troops ---
-    local all_units = wesnoth.units.find_on_map()
-
     instructions.available_units, instructions.available_power = {}, {}
     -- All units currently on transports are available
     for _,transport in pairs(all_transports) do
@@ -577,23 +575,21 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
     local planet_powers = {}
     for _,planet in ipairs(all_planets) do
+        local units_on_planet = UTLS.get_units_on_planet(planet)
         local my_power, enemy_power = 0, 0
         local my_units_this_planet = {}
-        for _,unit in ipairs(all_units) do
-            if (unit.role == planet.id) then
--- xxxx this can be simplified
-                if unit.race ~= 'building' then
-                    if wesnoth.sides.is_enemy(unit.side, wesnoth.current.side) then
-                        enemy_power = enemy_power + UTLS.unit_power(unit)
-                    elseif (unit.side == wesnoth.current.side) then
-                        my_power = my_power + UTLS.unit_power(unit)
-                        table.insert(my_units_this_planet, unit)
-                    end
-                else
-                    -- Count enemy HQ at half its HP; don't count our own HQs
-                    if wesnoth.sides.is_enemy(unit.side, wesnoth.current.side) then
-                        enemy_power = enemy_power + unit.hitpoints / 2
-                    end
+        for _,unit in ipairs(units_on_planet) do
+            if (not unit:matches { has_weapon = 'food' }) then
+                if wesnoth.sides.is_enemy(unit.side, wesnoth.current.side) then
+                    enemy_power = enemy_power + UTLS.unit_power(unit)
+                elseif (unit.side == wesnoth.current.side) then
+                    my_power = my_power + UTLS.unit_power(unit)
+                    table.insert(my_units_this_planet, unit)
+                end
+            else
+                -- Count enemy HQ at half its HP; don't count our own HQs
+                if wesnoth.sides.is_enemy(unit.side, wesnoth.current.side) then
+                    enemy_power = enemy_power + unit.hitpoints / 2
                 end
             end
         end
