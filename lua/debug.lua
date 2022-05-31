@@ -105,7 +105,7 @@ function debug_utils.clear_labels()
     local width, height = wesnoth.get_map_size()
     for x = 1,width do
         for y = 1,height do
-            wesnoth.label { x = x, y = y, text = "" }
+            wesnoth.map.remove_label { x = x, y = y }
         end
     end
 end
@@ -191,7 +191,7 @@ function debug_utils.put_gm_labels(map, key, cfg)
             out = H.round(out / round_to) * round_to
         end
 
-        wesnoth.label {
+        wesnoth.map.add_label {
             x = x, y = y,
             text = out,
             color = 255 * red_fac .. ',' .. 255 * green_fac .. ',' .. 255 * blue_fac

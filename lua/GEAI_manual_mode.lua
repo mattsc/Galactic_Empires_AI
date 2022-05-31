@@ -72,12 +72,12 @@ function GEAI_manual_mode.units_info(stdout_only)
 
         if wml.variables.debug_unit_labels then
             if (u:matches { has_weapon = 'food' }) then
-                wesnoth.label { x = u.x, y = u.y, text = u.role }
+                wesnoth.map.add_label { x = u.x, y = u.y, text = u.role }
             else
-                wesnoth.label { x = u.x, y = u.y, text = '' }
+                wesnoth.map.remove_label { x = u.x, y = u.y }
             end
         else
-            wesnoth.label { x = u.x, y = u.y, text = u.id }
+            wesnoth.map.add_label { x = u.x, y = u.y, text = u.id }
         end
 
         -- Count different types of units for each side
