@@ -209,7 +209,6 @@ local function find_assignments(assignments, transports, instructions, planets_b
         local passenger_power = instructions.available_power[transport.id] or 0
         local capacity = transport.attacks[1].number - transport.attacks[1].damage
         --std_print(UTLS.unit_str(transport) .. ': passenger_power ' .. passenger_power .. '; capacity ' .. transport.attacks[1].number - transport.attacks[1].damage .. '; moves ' .. transport.moves)
--- xxxx goal planet must have space to beam down to
 
         -- First calculate just the distance rating, as that is somewhat expensive and does
         -- not change as transports are assigned one by one
