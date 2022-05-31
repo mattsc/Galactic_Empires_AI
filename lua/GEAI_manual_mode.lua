@@ -81,7 +81,8 @@ function GEAI_manual_mode.units_info(stdout_only)
         end
 
         -- Count different types of units for each side
-        if (not unit_counts[u.side]) then unit_counts[u.side] = {} end
+        if (not unit_counts[u.side]) then unit_counts[u.side] = { types = {} } end
+        unit_counts[u.side].types[u.type] = (unit_counts[u.side].types[u.type] or 0) + 1
         if (u.role == 'planet') then
             unit_counts[u.side].planets = (unit_counts[u.side].planets or 0) + 1
         elseif u:matches { ability = 'transport' } then
@@ -132,6 +133,12 @@ function GEAI_manual_mode.units_info(stdout_only)
                 .. ', ships: ' .. (ucs.ships or 0)
                 .. ', transports: ' .. (ucs.transports or 0)
             )
+            -- This is not usually needed; enable manually when desired
+            if false then
+                for utype,n in pairs(ucs.types) do
+                    std_print(string.format('  %2d %s', n, utype))
+                end
+            end
         end
     end
 end
