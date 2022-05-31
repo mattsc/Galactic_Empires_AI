@@ -448,7 +448,7 @@ function ca_GE_transport_troops:evaluation(cfg, data)
     local all_planets = UTLS.get_planets()
     local neutral_planets, enemy_planets, planets_by_id = {}, {}, {}
     local homeworld
-    local n_sides = 0 -- number of sides which own a planet
+    local n_sides = 0 -- number of sides which have a homeworld
     for _,planet in ipairs(all_planets) do
         if planet:matches {
             { 'filter_side', {  -- this excludes neutral planets
@@ -1009,6 +1009,9 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
 
     -- Don't recruit transports if there are more enemy ships (by power) than own ships close to the homeworld
+    -- Also weigh whether it is more important to recruit combat ships or transports
+    local total_enemy_power, total_own_power = {}, 0
+    local max_total_enemy_power = 0
     if (n_missing > 0) then
         local enemy_ships = UTLS.get_ships {
             { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } }
@@ -1017,17 +1020,33 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
         -- Enemy ships count when they are one move away, and at half power two moves away.
         -- Include enemy transports.
-        local enemy_ship_power = 0
+        local close_enemy_ship_power = 0
         for _,ship in ipairs(enemy_ships) do
             local dist = wesnoth.map.distance_between(ship, homeworld)
+            local power = UTLS.unit_power(ship)
+
+            -- Add up power of all non-transport ships for each enemy side
+            if (not ship:matches { ability = 'transport' }) then
+                if (not total_enemy_power[ship.side]) then total_enemy_power[ship.side] = 0 end
+                total_enemy_power[ship.side] = total_enemy_power[ship.side] + power
+            end
 
             if (dist <= ship.max_moves + 1) then
-                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship)
+                close_enemy_ship_power = close_enemy_ship_power + power
             elseif (dist <= 2 * ship.max_moves + 1) then
-                enemy_ship_power = enemy_ship_power + UTLS.unit_power(ship) / 2
+                close_enemy_ship_power = close_enemy_ship_power + power / 2
             end
         end
-        --std_print('    enemy_ship_power: ' .. enemy_ship_power)
+        --std_print('    close_enemy_ship_power: ' .. close_enemy_ship_power)
+        --DBG.dbms(total_enemy_power, false, 'total_enemy_power')
+
+        -- Find the ship power of the strongest enemy side; we try to match that
+        for _,power in pairs(total_enemy_power) do
+            if (power > max_total_enemy_power) then
+                max_total_enemy_power = power
+            end
+        end
+        --std_print('    max_total_enemy_power: ' .. max_total_enemy_power)
 
         local own_ships = UTLS.get_ships {
             side = wesnoth.current.side,
@@ -1037,26 +1056,49 @@ function ca_GE_transport_troops:evaluation(cfg, data)
 
         -- Own ships only count when they are one move away.
         -- Do not include transports.
-        local own_ship_power = 0
+        local close_own_ship_power = 0
         for _,ship in ipairs(own_ships) do
-            local dist = wesnoth.map.distance_between(ship, homeworld)
+            local power = UTLS.unit_power(ship)
 
+            if (not ship:matches { ability = 'transport' }) then
+                total_own_power = total_own_power + power
+            end
+
+            local dist = wesnoth.map.distance_between(ship, homeworld)
             if (dist <= ship.max_moves + 1) then
-                own_ship_power = own_ship_power + UTLS.unit_power(ship)
+                close_own_ship_power = close_own_ship_power + power
             end
         end
-        --std_print('    own_ship_power: ' .. own_ship_power)
+        --std_print('    close_own_ship_power: ' .. close_own_ship_power)
+        --std_print('    total_own_power: ' .. total_own_power)
 
-        if (enemy_ship_power > own_ship_power) then
+        if (close_enemy_ship_power > close_own_ship_power) then
             n_missing = 0
         end
     end
     --std_print('transports missing: ' .. n_missing)
 
 
+    -- Now check whether we should recruit a transport or a combat ship next
     if (n_missing > 0) then
-        --std_print('  need more transports, checking whether we can recruit more; need: ' .. n_missing)
+        local fraction_transports = #all_transports / n_needed_overall
+        --std_print('fraction_transports: ' .. fraction_transports)
 
+        local fraction_combat_ships = total_own_power / max_total_enemy_power
+        --std_print('fraction_combat_ships: ' .. fraction_combat_ships)
+
+        if (fraction_transports < fraction_combat_ships) then
+            n_missing = 1
+        else
+            n_missing = 0
+        end
+    end
+
+
+    -- If n_missing is still non-zero after all this, recruit if there is enough gold.
+    -- Currently each pass only recruits one transport because of the above, but we
+    -- keep the mechanism for recruiting multiple in place for now.
+    if (n_missing > 0) then
         -- Simply finds the first unit type that has the transport ability as
         -- each faction only has one transport unit type on the recruit list
         local best_recruit
