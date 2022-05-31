@@ -1,3 +1,20 @@
+----- 0.2.0, 31 May 2022 -----
+
+- Transport troops CA:
+  - Weigh recruiting of transports vs. combat ships
+  - Decrease desired number of transports for ground combat purpose
+  - Do not require more transports for colonising than there are neutral planets
+  - Recruit new transports after all other transport actions, rather than before
+- Research CA bug fix: new ships are now correctly added to recruit list
+- Upgrades CA: add rating for new barracks upgrade
+- Move ground CA: transports do no blockade planet any more as of GE 4.3
+- Population control CA: reduce bonus for soldiers when enemies are close
+- Misc. minor changes and bug fixes
+  - Exclude hexes next to HQs when moving units away from HQs
+  - Remove all remaining ratings involving the removed cloner upgrade
+  - Misc. changes to debug output
+
+
 ----- 0.1.2, 26 May 2022 -----
 
 - Make AI compatible with Galactic Empires 4.4 (specifically cloner removal)
