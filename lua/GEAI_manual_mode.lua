@@ -63,9 +63,10 @@ function GEAI_manual_mode.units_info(stdout_only)
     -- to the function removes the labels.
     local tmp_unit_proxies = wesnoth.units.find_on_map()
     local str = ''
+    local unit_counts = {}
     for _,u in ipairs(tmp_unit_proxies) do
-        str = str .. string.format('%2d,%2d    HP: %3d/%3d    XP: %3d/%3d   pow: %5.1f        %s      (%s)\n',
-        u.x, u.y,
+        str = str .. string.format('S%1d %2d,%2d    HP: %3d/%3d    XP: %3d/%3d   pow: %5.1f        %s      (%s)\n',
+        u.side, u.x, u.y,
         u.hitpoints, u.max_hitpoints, u.experience, u.max_experience, UTLS.unit_power(u),
         u.id, tostring(u.name))
 
@@ -78,6 +79,16 @@ function GEAI_manual_mode.units_info(stdout_only)
         else
             wesnoth.label { x = u.x, y = u.y, text = u.id }
         end
+
+        -- Count different types of units for each side
+        if (not unit_counts[u.side]) then unit_counts[u.side] = {} end
+        if (u.role == 'planet') then
+            unit_counts[u.side].planets = (unit_counts[u.side].planets or 0) + 1
+        elseif u:matches { ability = 'transport' } then
+            unit_counts[u.side].transports = (unit_counts[u.side].transports or 0) + 1
+        elseif (u.role == 'ship') then
+            unit_counts[u.side].ships = (unit_counts[u.side].ships or 0) + 1
+        end
     end
 
     if wml.variables.debug_unit_labels then
@@ -88,11 +99,12 @@ function GEAI_manual_mode.units_info(stdout_only)
         std_print(str)
         --if (not stdout_only) then wesnoth.message(str) end
 
-        local transports = UTLS.get_transports { side = wesnoth.current.side }
+        -- Information about transports: assigned ones first, then unassigned
+        local transports = UTLS.get_transports()
         local str2 = ''
         for _,transport in pairs(transports) do
             if transport.variables.GEAI_purpose then
-                local str1 = UTLS.unit_str(transport)
+                local str1 = 'S' .. transport.side .. ' ' .. UTLS.unit_str(transport)
                 str1 = str1 .. '  ' .. transport.variables.GEAI_purpose ..':'
                 str1 = str1 .. ' ' .. transport.variables.GEAI_goal_id
                 if transport.variables.GEAI_pickup_id then
@@ -100,7 +112,8 @@ function GEAI_manual_mode.units_info(stdout_only)
                 end
                 std_print(str1)
             else
-                str2 = str2 .. '\n' .. UTLS.unit_str(transport)
+                if (str2 ~= '') then str2 = str2 .. '\n' end
+                str2 = str2 .. 'S' .. transport.side .. ' ' .. UTLS.unit_str(transport)
             end
 
             local passengers = wml.array_access.get('passengers', transport)
@@ -110,6 +123,16 @@ function GEAI_manual_mode.units_info(stdout_only)
             end
         end
         std_print(str2)
+
+        -- Summary of planets and ships for each side
+        std_print()
+        for side,ucs in ipairs(unit_counts) do
+            std_print('S' .. side
+                .. ': planets: ' .. (ucs.planets or 0)
+                .. ', ships: ' .. (ucs.ships or 0)
+                .. ', transports: ' .. (ucs.transports or 0)
+            )
+        end
     end
 end
 
