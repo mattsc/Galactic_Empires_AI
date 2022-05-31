@@ -45,3 +45,7 @@ function wesnoth.custom_synced_commands.GEAI_set_unit_variable(cfg)
     local unit = wesnoth.units.find_on_map { id = cfg.id }[1]
     unit.variables[cfg.name] = cfg.value
 end
+
+function wesnoth.custom_synced_commands.GEAI_allow_recruit(cfg)
+    wesnoth.wml_actions.allow_recruit { side = cfg.side, type = cfg.type }
+end
