@@ -57,6 +57,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
     )
     --std_print('available_gold: ' .. available_gold .. '/' .. wesnoth.sides[wesnoth.current.side].gold)
 
+    -- data.upgrades_gold: gold that has already been spent on upgrades this turn
     if (data.upgrades_gold >= available_gold) or (wesnoth.current.turn < upgrade_first_turn) then
         DBG.print_debug_eval(ca_name, 0, start_time, 'reached limit of upgrades to be installed this turn')
         return 0
