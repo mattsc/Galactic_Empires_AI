@@ -235,7 +235,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = hq_upgrade,
                         cost = cost,
                         is_essential = is_essential,
-                        score = ca_score
+                        score = ca_score,
+                        rating = hq_rating
                     }
                 end
             end
@@ -350,7 +351,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = planet_upgrade,
                         cost = cost,
                         is_essential = is_essential,
-                        score = ca_score
+                        score = ca_score,
+                        rating = planet_rating
                     }
                 end
             end
@@ -503,7 +505,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = ship_upgrade,
                         cost = cost,
                         is_essential = is_essential,
-                        score = score_ship
+                        score = score_ship,
+                        rating = ship_rating
                     }
 
                     if (ship_moves[ship.id][1] ~= ship.x) or (ship_moves[ship.id][2] ~= ship.y) then
