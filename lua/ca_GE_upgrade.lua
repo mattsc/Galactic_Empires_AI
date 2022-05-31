@@ -521,6 +521,12 @@ function ca_GE_upgrade:evaluation(cfg, data)
     end
     --DBG.dbms(best_upgrade, false, 'best_upgrade')
 
+    -- Ignore upgrades with negative ratings
+    -- This could also be done by initializing max_rating to zero or by adding it
+    -- to the conditional below. It's done here separately for added clarity.
+    if (best_upgrade.rating < 0) then best_upgrade = nil end
+    --DBG.dbms(best_upgrade, false, 'best_upgrade')
+
     if (not best_upgrade) then
         DBG.print_debug_eval(ca_name, 0, start_time, 'no affordable upgrade found')
         return 0
