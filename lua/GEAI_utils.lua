@@ -304,4 +304,19 @@ function GEAI_utils.unit_power(unit)
     return power
 end
 
+
+-- Math functions
+
+-- Find random number between between @minR and @maxR. If @maxR is not given, set it to 2 * @minR
+-- If @skip_random is set, turn randomness off and return @minR instead
+function GEAI_utils.random_between(minR, maxR, skip_random)
+    if (not maxR) then maxR = 2 * minR end
+    if skip_random then
+        return minR
+    else
+        return minR + (maxR - minR) * math.random()
+    end
+end
+
+
 return GEAI_utils
