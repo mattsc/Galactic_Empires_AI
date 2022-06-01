@@ -183,7 +183,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 end
 
                 if (hq_upgrade == 'barracks')
-                    and ((#enemies < 2) or (total_food >= 10))
+                    and ((#enemies > 0) or (total_food >= 10))
                 then
                     hq_rating = hq_rating + 10 + #enemies * 5 + total_food / 10
                 end
