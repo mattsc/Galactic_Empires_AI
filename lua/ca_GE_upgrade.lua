@@ -24,7 +24,12 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
     best_upgrade = nil
 
-    -- ***** This is for debug testing only, needs to be disabled for playing *****
+
+    ------ Begin debug testing code ------
+    -- Set this to 'true' to turn off randomness
+    local skip_random = false
+
+    -- For debug testing only, needs to be disabled for playing
     -- Set research levels, so that upgrades are available for testing
     if false then
         --wml.variables['empire[' .. wesnoth.current.side .. '].research_gadgets'] = 3
@@ -33,11 +38,21 @@ function ca_GE_upgrade:evaluation(cfg, data)
         -- The same does not work for research_ships, the recruit list needs to be changed for that
     end
 
-    -- This is for manual debug mode only. In a normal game, this variable is set by the reset_vars CA
+    -- This is for manual debug mode only. In a normal game, these variables are set by the reset_vars CA
     if (not data.turn_start_gold) or (data.turn ~= wesnoth.current.turn) then
         wesnoth.interface.add_chat_message(ca_name .. ' CA', 'setting data.turn_start_gold')
         UTLS.reset_vars(data)
     end
+
+    if false then -- this is just testing code to analyse the production of all the planets on the map
+        local all_planets = UTLS.get_planets()
+        for _,planet in ipairs(all_planets) do
+            std_print('planet: ' .. UTLS.unit_str(planet))
+            local total_food, total_gold = UTLS.total_production(planet)
+            std_print('  total food, gold: ' .. total_food, total_gold)
+        end
+    end
+    ------ End debug testing code ------
 
 
     -- Install upgrades up to certain limits (see GEAI_config.lua for details)
@@ -94,14 +109,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
     local headquarters = UTLS.get_headquarters { side = wesnoth.current.side }
     --std_print('#headquarters: ' .. #headquarters)
 
-    if false then -- this is just testing code to analyse the production of all the planets on the map
-        local all_planets = UTLS.get_planets()
-        for _,planet in ipairs(all_planets) do
-            std_print('planet: ' .. UTLS.unit_str(planet))
-            local total_food, total_gold = UTLS.total_production(planet)
-            std_print('  total food, gold: ' .. total_food, total_gold)
-        end
-    end
 
     local max_rating = - math.huge
     for _,hq in ipairs(headquarters) do
