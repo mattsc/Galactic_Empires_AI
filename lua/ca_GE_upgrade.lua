@@ -534,7 +534,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         and (not ship:matches { ability_type = 'regenerate' })
                         and (not ship:matches { ability = 'displacer' })
                     then
-                        ship_rating = ship_rating + UTLS.random_between(1000, 2000, skip_random)
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
 
