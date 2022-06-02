@@ -126,10 +126,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
     all_upgrades.hq.cloner = nil
 
 
+    local enemy_ships = UTLS.get_ships { { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } } }
+    --std_print('    #enemy_ships: ' .. #enemy_ships)
+
+
     ----- Headquarter and planet upgrades -----
     local headquarters = UTLS.get_headquarters { side = wesnoth.current.side }
     --std_print('#headquarters: ' .. #headquarters)
-
 
     -- Do these only once per call, otherwise it is pretty much guaranteed that there
     -- will be a value close to the maximum for each of these for one or several upgrades.
@@ -292,9 +295,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
         --std_print('  -- Planet upgrades --')
 
         -- Find enemy ships within one move of the planet
-        local enemy_ships = UTLS.get_ships { { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } } }
-        --std_print('    #enemy_ships: ' .. #enemy_ships)
-
         local close_ships = {}
         for _,enemy_ship in ipairs(enemy_ships) do
             if (wesnoth.map.distance_between(enemy_ship, planet) <= enemy_ship.max_moves + 1) then
