@@ -333,14 +333,11 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 end
 
                 if (#close_ships_4 >= 4) or (#close_planets_4 > 0) then
-                    if (wesnoth.sides[wesnoth.current.side].gold >= 100) then
-                        if (planet_upgrade == 'spacedock') or (planet_upgrade == 'launch_pad') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
-                        end
-                    else
-                        if (planet_upgrade == 'jammer') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
-                        end
+                    if (planet_upgrade == 'spacedock')
+                        or (planet_upgrade == 'launch_pad')
+                        or (planet_upgrade == 'jammer')
+                    then
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
                     end
                 end
 
