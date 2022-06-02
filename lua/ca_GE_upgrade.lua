@@ -331,10 +331,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
                 if (planet.hitpoints < planet.max_hitpoints) then
                     if (planet_upgrade == 'gaiacology') then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #adj_ships), 200, skip_random)
-                    end
-                    if (planet_upgrade == 'shields') then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #adj_ships), 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(1000 + 20 * (1 + #adj_ships), nil, skip_random)
                     end
                 end
 
