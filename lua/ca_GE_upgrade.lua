@@ -487,10 +487,16 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     if (ship_upgrade == 'cloak') then
                         ship_rating = ship_rating + UTLS.random_between(125, 200, skip_random)
                     end
+                    if (ship_upgrade == 'armour') then
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
+                    end
                     if (ship_upgrade == 'displacer') then
                         ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                     if (ship_upgrade == 'slipstream') then
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
+                    end
+                    if (ship_upgrade == 'slingshot') then
                         ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
