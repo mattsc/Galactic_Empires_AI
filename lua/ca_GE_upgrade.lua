@@ -70,10 +70,31 @@ function ca_GE_upgrade:evaluation(cfg, data)
        upgrade_gold_fraction * data.turn_start_gold,
        wesnoth.sides[wesnoth.current.side].gold - upgrade_gold_remaining
     )
-    --std_print('available_gold: ' .. available_gold .. '/' .. wesnoth.sides[wesnoth.current.side].gold)
+    --std_print('available_gold:           ' .. available_gold .. '/' .. wesnoth.sides[wesnoth.current.side].gold)
+
+    -- More expensive upgrades are allowed with probability 'upgrade_prob_expensive'.
+    -- This must be decided only once per turn -> save in persistent data variable,
+    -- which is erased at beginning of each turn by the reset_vars CA.
+    if (data.allow_expensive_upgrades == nil) then
+        data.allow_expensive_upgrades = math.random() < CFG.get_cfg_parm('upgrade_prob_expensive')
+        --std_print('Recalculate data.allow_expensive_upgrades: ', data.allow_expensive_upgrades)
+    end
+
+    -- Use separate variable to determine how much gold is available for expensive upgrades.
+    -- If no expensive upgrades are allowed, set it to same value as available_gold.
+    local available_gold_expensive = available_gold
+    if data.allow_expensive_upgrades then
+        available_gold_expensive = wesnoth.sides[wesnoth.current.side].gold
+    end
+
+    -- With reasonable values of the configuration parameters, the following should
+    -- not be needed, but just in case they get set to something strange
+    if (available_gold_expensive < available_gold) then available_gold_expensive = available_gold end
+    --std_print('available_gold_expensive: ' .. available_gold_expensive)
+
 
     -- data.upgrades_gold: gold that has already been spent on upgrades this turn
-    if (data.upgrades_gold >= available_gold) or (wesnoth.current.turn < upgrade_first_turn) then
+    if (data.upgrades_gold >= available_gold_expensive) or (wesnoth.current.turn < upgrade_first_turn) then
         DBG.print_debug_eval(ca_name, 0, start_time, 'reached limit of upgrades to be installed this turn')
         return 0
     end
@@ -188,7 +209,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for hq_upgrade,cost in pairs(all_upgrades.hq) do
             local is_available = UPGRD.show_item(hq_upgrade)
 
-            if is_available and (cost <= available_gold) then
+            if is_available and (cost <= available_gold_expensive) then
                 local hq_rating = hq_base_rating
 
                 if (hq_upgrade == 'autofix_hq') and (hq.hitpoints < hq.max_hitpoints) then
@@ -244,7 +265,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 -- We still need a very small random contribution for those upgrades that do not get a bonus
                 hq_rating = hq_rating + minor_rating + UTLS.random_between(0, 0.01, skip_random)
 
-                --std_print(string.format(UTLS.unit_str(hq) ..' %20s  %3dg  %8.3f  %s', hq_upgrade, cost, hq_rating, tostring(is_essential)))
+                -- Only allow expensive upgrades if they are essential
+                local is_expensive = cost > available_gold
+                if is_expensive and (not is_essential) then
+                    hq_rating = -1e6
+                end
+
+                --std_print(string.format(UTLS.unit_str(hq) ..' %20s  %3dg  %8.3f  %s %s', hq_upgrade, cost, hq_rating, tostring(is_essential), tostring(is_expensive)))
                 if (hq_rating > max_rating) then
                     max_rating = hq_rating
                     best_upgrade = {
@@ -252,6 +279,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = hq_upgrade,
                         cost = cost,
                         is_essential = is_essential,
+                        is_expensive = is_expensive,
                         score = ca_score,
                         rating = hq_rating
                     }
@@ -289,7 +317,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
 
-            if is_available and (cost <= available_gold) then
+            if is_available and (cost <= available_gold_expensive) then
                 local planet_rating = planet_base_rating
 
                 -- Bonus for defensive upgrades
@@ -358,7 +386,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 -- We still need a very small random contribution for those upgrades that do not get a bonus
                 planet_rating = planet_rating + minor_rating + UTLS.random_between(0, 0.01, skip_random)
 
-                --std_print(string.format(UTLS.unit_str(planet) ..' %20s  %3dg  %8.3f  %s', planet_upgrade, cost, planet_rating, tostring(is_essential)))
+                -- Only allow expensive upgrades if they are essential
+                local is_expensive = cost > available_gold
+                if is_expensive and (not is_essential) then
+                    planet_rating = -1e6
+                end
+
+                --std_print(string.format(UTLS.unit_str(planet) ..' %20s  %3dg  %8.3f  %s %s', planet_upgrade, cost, planet_rating, tostring(is_essential), tostring(is_expensive)))
                 if (planet_rating > max_rating) then
                     max_rating = planet_rating
                     best_upgrade = {
@@ -366,6 +400,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = planet_upgrade,
                         cost = cost,
                         is_essential = is_essential,
+                        is_expensive = is_expensive,
                         score = ca_score,
                         rating = planet_rating
                     }
@@ -443,7 +478,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
         for ship_upgrade,cost in pairs(all_upgrades.ship) do
             local is_available = UPGRD.show_item(ship_upgrade, true)
 
-            if is_available and (cost <= available_gold) then
+            if is_available and (cost <= available_gold_expensive) then
                 local ship_rating = ship_base_rating
 
                 if ship:matches { ability = 'transport' } then
@@ -514,7 +549,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 -- We still need a very small random contribution for those upgrades that do not get a bonus
                 ship_rating = ship_rating + minor_rating_ship + UTLS.random_between(0, 0.01, skip_random)
 
-                --std_print(string.format(UTLS.unit_str(ship) .. ' %20s  %3dg  %9.4f  %s', ship_upgrade, cost, ship_rating, tostring(is_essential)))
+                -- Only allow expensive upgrades if they are essential
+                local is_expensive = cost > available_gold
+                if is_expensive and (not is_essential) then
+                    ship_rating = -1e6
+                end
+
+                --std_print(string.format(UTLS.unit_str(ship) .. ' %20s  %3dg  %9.4f  %s %s', ship_upgrade, cost, ship_rating, tostring(is_essential), tostring(is_expensive)))
                 if (ship_rating > max_rating) then
                     max_rating = ship_rating
                     best_upgrade = {
@@ -522,6 +563,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         utype = ship_upgrade,
                         cost = cost,
                         is_essential = is_essential,
+                        is_expensive = is_expensive,
                         score = score_ship,
                         rating = ship_rating
                     }
@@ -564,6 +606,12 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
         data.upgrades_gold = data.turn_start_gold + 1 -- install only one non-essential upgrade
     end
 
+    -- Only allow one expensive upgrade per turn
+    if best_upgrade.is_expensive then
+        data.allow_expensive_upgrades = false  -- important: this needs to be set to false, not nil
+        --std_print('no more expensive upgrades this turn')
+    end
+
     local unit = wesnoth.units.get(best_upgrade.x, best_upgrade.y)
 
     -- First, if this is a ship that needs to be moved, do that
@@ -585,8 +633,10 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
     end
 
     local str = best_upgrade.utype .. ': ' .. UTLS.unit_str(unit) .. ' with ' .. best_upgrade.utype .. ' (' .. best_upgrade.cost .. '/' .. wesnoth.sides[wesnoth.current.side].gold .. ' gold)'
+    if best_upgrade.is_expensive then str = str .. ' -- expensive' end
     DBG.print_debug_exec(ca_name, str)
     UTLS.output_add_move(str)
+    --wesnoth.message('S' .. wesnoth.current.side .. ' T' .. wesnoth.current.turn, str)
 
     -- Check whether gold changed, to prevent infinite loops in case something goes wrong
     local gold_before = wesnoth.sides[wesnoth.current.side].gold

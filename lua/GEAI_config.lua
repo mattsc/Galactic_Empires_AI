@@ -85,6 +85,8 @@ local GEAI_cfg = {
     upgrade_gold_fraction = 0.25,
     -- Do not buy upgrade if gold remaining after is less than:
     upgrade_gold_remaining = 30,
+    -- Probability of installing a more expensive upgrade:
+    upgrade_prob_expensive = 0.5,
     -- Do not install upgrades before this turn:
     upgrade_first_turn = 2
 }
