@@ -519,12 +519,9 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 end
 
                 -- Ignore all of the following upgrades (could not be used effectively by the AI)
-                if (ship_upgrade == 'thrusters')
-                    or (ship_upgrade == 'tractor_beam')
-                    or (ship_upgrade == 'quickloader')
+                if (ship_upgrade == 'tractor_beam')
                     or (ship_upgrade == 'assault_pod')
                     or (ship_upgrade == 'bio_bomb')
-                    or (ship_upgrade == 'slingshot')
                 then
                     ship_rating = ship_rating - 1e6
                 end
