@@ -366,10 +366,12 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                 end
 
-                -- Do not buy trade hub if planet is not at max population
+                -- Do not buy trade hub if planet is not at max population, otherwise make it essential
                 if (planet_upgrade == 'trade_hub') then
                     if (hq.variables.population_current < hq.variables.population_max) then
                         planet_rating = planet_rating - 1e6
+                    else
+                        planet_rating = planet_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
 
