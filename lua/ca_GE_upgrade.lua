@@ -321,10 +321,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 local planet_rating = planet_base_rating
 
                 -- Bonus for defensive upgrades
+                -- This is a minor bonus, others may go on top of it below
                 if (planet_upgrade == 'gaiacology')
                     or (planet_upgrade == 'defence_laser')
                     or (planet_upgrade == 'missile_base')
                     or (planet_upgrade == 'shields')
+                    or (planet_upgrade == 'jammer')
+                    or (planet_upgrade == 'reflector')
                 then
                     planet_rating = planet_rating + planet_defensive_upgrade_bonus
                 end
@@ -361,6 +364,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     if (planet_upgrade == 'spacedock')
                         or (planet_upgrade == 'launch_pad')
                         or (planet_upgrade == 'jammer')
+                        or (planet_upgrade == 'reflector')
                     then
                         planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
                     end
