@@ -314,6 +314,14 @@ function ca_GE_upgrade:evaluation(cfg, data)
         }
         --std_print('    #close_planets_4: ' .. #close_planets_4)
 
+        local with_antimatter_weapon = false
+        for _,ship in ipairs(close_ships_3) do
+            if ship:matches { { 'has_attack', { type = 'antimatter' } } } then
+                with_antimatter_weapon = true
+                --std_print('    anitmatter weapon: ' .. UTLS.unit_str(ship))
+            end
+        end
+
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
 
@@ -326,20 +334,13 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     planet_rating = planet_rating + planet_defensive_upgrade_bonus
                 end
 
-                if (planet.hitpoints < planet.max_hitpoints) then
+                if (planet.hitpoints < planet.max_hitpoints) or with_antimatter_weapon then
                     if (planet_upgrade == 'gaiacology') then
                         planet_rating = planet_rating + UTLS.random_between(1000 + 20 * (1 + #adj_ships), nil, skip_random)
                     end
                 end
 
                 if (#close_ships_3 >= 2) then
-                    local with_antimatter_weapon = false
-                    for _,ship in ipairs(close_ships_3) do
-                        if ship:matches { { 'has_attack', { type = 'antimatter' } } } then
-                            with_antimatter_weapon = true
-                            --std_print('    anitmatter weapon: ' .. UTLS.unit_str(ship))
-                        end
-                    end
                     if with_antimatter_weapon then
                         if (planet_upgrade == 'defence_laser') then
                             planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships_3), 200, skip_random)
