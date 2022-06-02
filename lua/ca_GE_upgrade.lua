@@ -110,6 +110,15 @@ function ca_GE_upgrade:evaluation(cfg, data)
     --std_print('#headquarters: ' .. #headquarters)
 
 
+    -- Do these only once per call, otherwise it is pretty much guaranteed that there
+    -- will be a value close to the maximum for each of these for one or several upgrades.
+    local hq_base_rating = UTLS.random_between(4, 10, skip_random)
+    local planet_base_rating = UTLS.random_between(6, 10, skip_random)
+    local planet_defensive_upgrade_bonus = UTLS.random_between(2, 4, skip_random)
+    local ship_base_rating = UTLS.random_between(2, 10, skip_random)
+    local homeworld_factor = UTLS.random_between(1, 2, skip_random)
+    local flagship_factor = UTLS.random_between(1, 2, skip_random)
+
     local max_rating = - math.huge
     for _,hq in ipairs(headquarters) do
         local planet = UTLS.get_planet_from_unit(hq)
@@ -122,24 +131,25 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
         -- Minor ratings apply equally to HQs and planets
         local minor_rating = 0
+        minor_rating = minor_rating + UTLS.random_between(hq.variables.population_current / 20, nil, skip_random)
+        minor_rating = minor_rating + UTLS.random_between(hq.variables.population_max / 50, nil, skip_random)
 
-        minor_rating = minor_rating + hq.variables.population_current / 20
-        minor_rating = minor_rating + hq.variables.population_max / 50
-
-        if (planet.type == 'Green Giant') then minor_rating = minor_rating + 0.9
-        elseif (planet.type == 'Red Giant') then minor_rating = minor_rating + 0.8
-        elseif (planet.type == 'Green Dwarf') then minor_rating = minor_rating + 0.7
-        elseif (planet.type == 'Dust Giant') then minor_rating = minor_rating + 0.6
-        elseif (planet.type == 'Red Dwarf') then minor_rating = minor_rating + 0.5
-        elseif (planet.type == 'Ice Giant') then minor_rating = minor_rating + 0.4
-        elseif (planet.type == 'Dust Dwarf') then minor_rating = minor_rating + 0.3
-        elseif (planet.type == 'Ice Dwarf') then minor_rating = minor_rating + 0.2
-        elseif (planet.type == 'Moon') or (planet.type == 'Red Moon') then minor_rating = minor_rating + 0.1
+        -- Allow some, but not full random mixing between these
+        if (planet.type == 'Green Giant') then minor_rating = minor_rating + UTLS.random_between(0.8, 1, skip_random)
+        elseif (planet.type == 'Red Giant') then minor_rating = minor_rating + UTLS.random_between(0.7, 0.95, skip_random)
+        elseif (planet.type == 'Green Dwarf') then minor_rating = minor_rating + UTLS.random_between(0.6, 0.9, skip_random)
+        elseif (planet.type == 'Dust Giant') then minor_rating = minor_rating + UTLS.random_between(0.5, 0.85, skip_random)
+        elseif (planet.type == 'Red Dwarf') then minor_rating = minor_rating + UTLS.random_between(0.4, 0.8, skip_random)
+        elseif (planet.type == 'Ice Giant') then minor_rating = minor_rating + UTLS.random_between(0.3, 0.75, skip_random)
+        elseif (planet.type == 'Dust Dwarf') then minor_rating = minor_rating + UTLS.random_between(0.2, 0.7, skip_random)
+        elseif (planet.type == 'Ice Dwarf') then minor_rating = minor_rating + UTLS.random_between(0.1, 0.65, skip_random)
+        elseif (planet.type == 'Moon') or (planet.type == 'Red Moon') then minor_rating = minor_rating + UTLS.random_between(0, 0.6, skip_random)
         else DBG.error('upgrade', 'Unknown planet type: ' .. planet.type)
         end
         --std_print('  minor_rating: ' .. minor_rating)
 
 
+        ------ Headquarter upgrades ------
         --std_print('  -- HQ upgrades --')
         local total_food, total_gold = UTLS.total_production(planet)
         --std_print('    total food, gold: ' .. total_food, total_gold)
@@ -179,30 +189,30 @@ function ca_GE_upgrade:evaluation(cfg, data)
             local is_available = UPGRD.show_item(hq_upgrade)
 
             if is_available and (cost <= available_gold) then
-                local hq_rating = 4 -- base rating for HQ upgrades
+                local hq_rating = hq_base_rating
 
                 if (hq_upgrade == 'autofix_hq') and (hq.hitpoints < hq.max_hitpoints) then
-                    hq_rating = hq_rating + 1000 * (1 + #enemies)
+                    hq_rating = hq_rating + UTLS.random_between(2000 * (1 + #enemies / 10), nil, skip_random)
                 end
 
                 if (hq_upgrade == 'hospital') and (n_injured > 0) then
-                    hq_rating = hq_rating + 100 * n_injured * (1 + #enemies)
+                    hq_rating = hq_rating + UTLS.random_between(1000 * (1 + n_injured / 10) * (1 + #enemies / 10), nil, skip_random)
                 end
 
                 if (hq_upgrade == 'barracks')
                     and ((#enemies > 0) or (total_food >= 10))
                 then
-                    hq_rating = hq_rating + 10 + #enemies * 5 + total_food / 10
+                    hq_rating = hq_rating + UTLS.random_between(150 + #enemies + total_food / 10, 200, skip_random)
                 end
 
                 if (hq_upgrade == 'food_processor') then
-                    local bonus = math.max(0, 50 - total_food)
+                    local bonus = 100 + math.max(0, 50 - total_food)
                     --std_print('food processor bonus: ' .. bonus)
-                    hq_rating = hq_rating + bonus
+                    hq_rating = hq_rating + UTLS.random_between(bonus, 200, skip_random)
                 end
 
                 if (hq_upgrade == 'mineral_processor') then
-                    hq_rating = hq_rating + 10
+                    hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
                 end
 
                 if (#enemies < 2) then
@@ -210,29 +220,29 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         if (hq_upgrade == 'replicator')
                             and (total_food >= total_gold) and (total_food >= 8)
                         then
-                            hq_rating = hq_rating + 10
+                            hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
                         end
                         if (hq_upgrade == 'nanomine')
                             and (total_food < total_gold) and (total_gold >= 8)
                         then
-                            hq_rating = hq_rating + 10
+                            hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
                         end
                     end
 
                     if (hq_upgrade == 'lab') and (n_science >= 4) then
-                        hq_rating = hq_rating + 10
+                        hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
 
-                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
-                local is_essential = hq_rating > 10
+                -- Essential upgrades are those with a rating >= 100 (before adding the minor ratings)
+                local is_essential = hq_rating >= 100
 
-                -- if this is the homeworld, multiply rating by 10
                 if is_essential and (planet.variables.colonised == 'homeworld') then
-                    hq_rating = hq_rating * 10
+                    hq_rating = hq_rating * homeworld_factor
                 end
 
-                hq_rating = hq_rating + minor_rating + math.random() / 100
+                -- We still need a very small random contribution for those upgrades that do not get a bonus
+                hq_rating = hq_rating + minor_rating + UTLS.random_between(0, 0.01, skip_random)
 
                 --std_print(string.format(UTLS.unit_str(hq) ..' %20s  %3dg  %8.3f  %s', hq_upgrade, cost, hq_rating, tostring(is_essential)))
                 if (hq_rating > max_rating) then
@@ -249,6 +259,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
             end
         end
 
+
+        ------ Planet upgrades ------
         --std_print('  -- Planet upgrades --')
         local adj_ships = UTLS.get_ships {
             { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
@@ -274,12 +286,11 @@ function ca_GE_upgrade:evaluation(cfg, data)
         }
         --std_print('    #close_planets_4: ' .. #close_planets_4)
 
-
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
 
             if is_available and (cost <= available_gold) then
-                local planet_rating = 6 -- base rating for planet upgrades
+                local planet_rating = planet_base_rating
 
                 -- Bonus for defensive upgrades
                 if (planet_upgrade == 'gaiacology')
@@ -287,15 +298,15 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     or (planet_upgrade == 'missile_base')
                     or (planet_upgrade == 'shields')
                 then
-                    planet_rating = planet_rating + 2
+                    planet_rating = planet_rating + planet_defensive_upgrade_bonus
                 end
 
                 if (planet.hitpoints < planet.max_hitpoints) then
                     if (planet_upgrade == 'gaiacology') then
-                        planet_rating = planet_rating + 20 * (1 + #adj_ships)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #adj_ships), 200, skip_random)
                     end
                     if (planet_upgrade == 'shields') then
-                        planet_rating = planet_rating + 10 * (1 + #adj_ships)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #adj_ships), 200, skip_random)
                     end
                 end
 
@@ -309,26 +320,26 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                     if with_antimatter_weapon then
                         if (planet_upgrade == 'defence_laser') then
-                            planet_rating = planet_rating + 20 * (1 + #close_ships_3)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships_3), 200, skip_random)
                         end
                     else
                         if (planet_upgrade == 'missile_base') then
-                            planet_rating = planet_rating + 20 * (1 + #close_ships_3)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships_3), 200, skip_random)
                         end
                     end
                     if (planet_upgrade == 'shields') then
-                        planet_rating = planet_rating + 10 * (1 + #close_ships_3)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_3), 200, skip_random)
                     end
                 end
 
                 if (#close_ships_4 >= 4) or (#close_planets_4 > 0) then
                     if (wesnoth.sides[wesnoth.current.side].gold >= 100) then
                         if (planet_upgrade == 'spacedock') or (planet_upgrade == 'launch_pad') then
-                            planet_rating = planet_rating + 10 * (1 + #close_ships_4)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
                         end
                     else
                         if (planet_upgrade == 'jammer') then
-                            planet_rating = planet_rating + 10 * (1 + #close_ships_4)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
                         end
                     end
                 end
@@ -340,15 +351,15 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                 end
 
-                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
-                local is_essential = planet_rating > 10
+                -- Essential upgrades are those with a rating > 100 (before adding the minor ratings)
+                local is_essential = planet_rating > 100
 
-                -- if this is the homeworld, multiply rating by 10
                 if is_essential and (planet.variables.colonised == 'homeworld') then
-                    planet_rating = planet_rating * 10
+                    planet_rating = planet_rating * homeworld_factor
                 end
 
-                planet_rating = planet_rating + minor_rating + math.random() / 100
+                -- We still need a very small random contribution for those upgrades that do not get a bonus
+                planet_rating = planet_rating + minor_rating + UTLS.random_between(0, 0.01, skip_random)
 
                 --std_print(string.format(UTLS.unit_str(planet) ..' %20s  %3dg  %8.3f  %s', planet_upgrade, cost, planet_rating, tostring(is_essential)))
                 if (planet_rating > max_rating) then
@@ -370,7 +381,8 @@ function ca_GE_upgrade:evaluation(cfg, data)
     end
 
 
-    ----- Ship upgrades -----
+    ------ Ship upgrades ------
+    --std_print('  -- Ship upgrades --')
     local all_ships = UTLS.get_ships {
         side = wesnoth.current.side,
         { 'not', { type = 'Terran Probe,Iildari Probe' } }
@@ -428,30 +440,33 @@ function ca_GE_upgrade:evaluation(cfg, data)
         -- For the filter to work, the ship needs to be stored as 'ship' in WML
         wml.fire("store_unit", { variable="ship", { "filter", { id = ship.id } } })
 
+        local minor_rating_ship = UTLS.random_between(ship.level, 4, skip_random)
+        --std_print('minor_rating_ship ' .. UTLS.unit_str(ship) .. ': ' .. minor_rating_ship)
+
         for ship_upgrade,cost in pairs(all_upgrades.ship) do
             local is_available = UPGRD.show_item(ship_upgrade, true)
 
             if is_available and (cost <= available_gold) then
-                local ship_rating = 2 -- base rating for ship upgrades
+                local ship_rating = ship_base_rating
 
                 if ship:matches { ability = 'transport' } then
                     if (ship_upgrade == 'turbocharger') then
-                        ship_rating = ship_rating + 20
+                        ship_rating = ship_rating + UTLS.random_between(150, 200, skip_random)
                     end
                     if (ship_upgrade == 'cloak') then
-                        ship_rating = ship_rating + 15
+                        ship_rating = ship_rating + UTLS.random_between(125, 200, skip_random)
                     end
                     if (ship_upgrade == 'displacer') then
-                        ship_rating = ship_rating + 10
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                     if (ship_upgrade == 'slipstream') then
-                        ship_rating = ship_rating + 10
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
 
                 if (ship_upgrade == 'slipstream') then
                     if ship:matches { { 'has_attack', { special_id = 'backstab' } } } then
-                        ship_rating = ship_rating + 10
+                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                     if (ship.max_moves < 5) then
                         ship_rating = ship_rating - 1e6
@@ -488,21 +503,19 @@ function ca_GE_upgrade:evaluation(cfg, data)
                         and (not ship:matches { ability_type = 'regenerate' })
                         and (not ship:matches { ability = 'displacer' })
                     then
-                        ship_rating = ship_rating + 100
+                        ship_rating = ship_rating + UTLS.random_between(1000, 2000, skip_random)
                     end
                 end
 
-                -- Essential upgrades are those with a rating > 10 (before adding the minor ratings)
-                local is_essential = ship_rating > 10
+                -- Essential upgrades are those with a rating > 100 (before adding the minor ratings)
+                local is_essential = ship_rating > 100
 
                 if is_essential and ship:matches { ability = 'flagship' } then
-                    ship_rating = ship_rating * 10
+                    ship_rating = ship_rating * flagship_factor
                 end
 
-                local minor_rating_ship = ship.level
-                --std_print('minor_rating_ship ' .. UTLS.unit_str(ship) .. ': ' .. minor_rating_ship)
-
-                ship_rating = ship_rating + minor_rating_ship + math.random() / 100
+                -- We still need a very small random contribution for those upgrades that do not get a bonus
+                ship_rating = ship_rating + minor_rating_ship + UTLS.random_between(0, 0.01, skip_random)
 
                 --std_print(string.format(UTLS.unit_str(ship) .. ' %20s  %3dg  %9.4f  %s', ship_upgrade, cost, ship_rating, tostring(is_essential)))
                 if (ship_rating > max_rating) then
