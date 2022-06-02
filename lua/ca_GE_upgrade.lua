@@ -322,13 +322,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
                 -- Bonus for defensive upgrades
                 -- This is a minor bonus, others may go on top of it below
-                if (planet_upgrade == 'gaiacology')
-                    or (planet_upgrade == 'defence_laser')
-                    or (planet_upgrade == 'missile_base')
-                    or (planet_upgrade == 'shields')
-                    or (planet_upgrade == 'jammer')
-                    or (planet_upgrade == 'reflector')
-                then
+                if string.find('gaiacology/defence_laser/missile_base/shields/jammer/reflector', planet_upgrade) then
                     planet_rating = planet_rating + planet_defensive_upgrade_bonus
                 end
 
@@ -361,11 +355,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 end
 
                 if (#close_ships_4 >= 4) or (#close_planets_4 > 0) then
-                    if (planet_upgrade == 'spacedock')
-                        or (planet_upgrade == 'launch_pad')
-                        or (planet_upgrade == 'jammer')
-                        or (planet_upgrade == 'reflector')
-                    then
+                    if string.find('spacedock/launch_pad/jammer/reflector', planet_upgrade) then
                         planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
                     end
                 end
@@ -491,16 +481,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     if (ship_upgrade == 'cloak') then
                         ship_rating = ship_rating + UTLS.random_between(125, 200, skip_random)
                     end
-                    if (ship_upgrade == 'armour') then
-                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
-                    end
-                    if (ship_upgrade == 'displacer') then
-                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
-                    end
-                    if (ship_upgrade == 'slipstream') then
-                        ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
-                    end
-                    if (ship_upgrade == 'slingshot') then
+                    if string.find('armour/displacer/slipstream/slingshot', ship_upgrade) then
                         ship_rating = ship_rating + UTLS.random_between(100, 200, skip_random)
                     end
                 end
@@ -523,18 +504,14 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 end
 
                 -- Ignore all of the following upgrades (could not be used effectively by the AI)
-                if (ship_upgrade == 'tractor_beam')
-                    or (ship_upgrade == 'assault_pod')
-                    or (ship_upgrade == 'bio_bomb')
-                then
+                if string.find('tractor_beam/assault_pod/bio_bomb', ship_upgrade) then
                     ship_rating = ship_rating - 1e6
                 end
 
-                local score_ship = ca_score_ship
                 if ship:matches { ability = 'flagship' } then
-                    score_ship = ca_score_flagship
-                    -- If the flagship does not already have one of these, give the
+                    -- If the flagship does not already have one of these defensive upgrades, give the
                     -- bonus to all, the random contribution will then decide between them
+                    -- Since the flagship gets a bonus anyway, we don't need to give one for other upgrades
                     if string.find('armour/cloak/autofix_ship/displacer', ship_upgrade)
                         and (not ship:matches { ability = 'ship_armour' })
                         and (not ship:matches { ability = 'cloak' })
@@ -559,6 +536,11 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 local is_expensive = cost > available_gold
                 if is_expensive and (not is_essential) then
                     ship_rating = -1e6
+                end
+
+                local score_ship = ca_score_ship
+                if ship:matches { ability = 'flagship' } then
+                    score_ship = ca_score_flagship
                 end
 
                 --std_print(string.format(UTLS.unit_str(ship) .. ' %20s  %3dg  %9.4f  %s %s', ship_upgrade, cost, ship_rating, tostring(is_essential), tostring(is_expensive)))
