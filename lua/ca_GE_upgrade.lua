@@ -290,37 +290,37 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
         ------ Planet upgrades ------
         --std_print('  -- Planet upgrades --')
-        local adj_ships = UTLS.get_ships {
-            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
-            { 'filter_adjacent', { x = planet.x, y = planet.y } }
-        }
-        --std_print('    #adj_ships: ' .. #adj_ships)
 
-        local close_ships_3 = UTLS.get_ships {
-            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
-            { 'filter_location', { x = planet.x, y = planet.y, radius = 3 } }
-        }
-        --std_print('    #close_ships_3: ' .. #close_ships_3)
+        -- Find enemy ships within one move of the planet
+        local enemy_ships = UTLS.get_ships { { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } } }
+        --std_print('    #enemy_ships: ' .. #enemy_ships)
 
-        local close_ships_4 = UTLS.get_ships {
-            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
-            { 'filter_location', { x = planet.x, y = planet.y, radius = 4 } }
-        }
-        --std_print('    #close_ships_4: ' .. #close_ships_4)
-
-        local close_planets_4 = UTLS.get_planets {
-            { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } },
-            { 'filter_location', { x = planet.x, y = planet.y, radius = 4 } }
-        }
-        --std_print('    #close_planets_4: ' .. #close_planets_4)
+        local close_ships = {}
+        for _,enemy_ship in ipairs(enemy_ships) do
+            if (wesnoth.map.distance_between(enemy_ship, planet) <= enemy_ship.max_moves + 1) then
+                table.insert(close_ships, enemy_ship)
+            end
+        end
+        --std_print('    #close_ships: ' .. #close_ships)
 
         local with_antimatter_weapon = false
-        for _,ship in ipairs(close_ships_3) do
+        for _,ship in ipairs(close_ships) do
             if ship:matches { { 'has_attack', { type = 'antimatter' } } } then
                 with_antimatter_weapon = true
                 --std_print('    anitmatter weapon: ' .. UTLS.unit_str(ship))
             end
         end
+
+        -- Find enemy-side planets (excluding neutral planets) within 6 hexes
+        local close_planets = UTLS.get_planets {
+            { 'filter_side', {
+                { 'enemy_of', {side = wesnoth.current.side } },
+                { 'has_unit', { canrecruit = 'yes' } }
+            } },
+            { 'filter_location', { x = planet.x, y = planet.y, radius = 6 } }
+        }
+        --std_print('    #close_planets: ' .. #close_planets)
+
 
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
@@ -336,28 +336,28 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
                 if (planet.hitpoints < planet.max_hitpoints) or with_antimatter_weapon then
                     if (planet_upgrade == 'gaiacology') then
-                        planet_rating = planet_rating + UTLS.random_between(1000 + 20 * (1 + #adj_ships), nil, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(1000 + 20 * (1 + #close_ships), nil, skip_random)
                     end
                 end
 
-                if (#close_ships_3 >= 2) then
+                if (#close_ships >= 2) then
                     if with_antimatter_weapon then
                         if (planet_upgrade == 'defence_laser') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships_3), 200, skip_random)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships), 200, skip_random)
                         end
                     else
                         if (planet_upgrade == 'missile_base') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships_3), 200, skip_random)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships), 200, skip_random)
                         end
                     end
                     if (planet_upgrade == 'shields') then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_3), 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships), 200, skip_random)
                     end
                 end
 
-                if (#close_ships_4 >= 4) or (#close_planets_4 > 0) then
+                if (#close_ships >= 4) or (#close_planets > 0) then
                     if string.find('spacedock/launch_pad/jammer/reflector', planet_upgrade) then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships_4), 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships), 200, skip_random)
                     end
                 end
 
