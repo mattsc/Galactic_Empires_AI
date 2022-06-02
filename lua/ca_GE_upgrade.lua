@@ -557,6 +557,13 @@ end
 function ca_GE_upgrade:execution(cfg, data, ai_debug)
     local ai = ai or ai_debug
 
+    -- Set the variables that count how much gold has been spent on upgrades
+    if best_upgrade.is_essential then
+        data.upgrades_gold = data.upgrades_gold + best_upgrade.cost
+    else
+        data.upgrades_gold = data.turn_start_gold + 1 -- install only one non-essential upgrade
+    end
+
     local unit = wesnoth.units.get(best_upgrade.x, best_upgrade.y)
 
     -- First, if this is a ship that needs to be moved, do that
@@ -585,13 +592,6 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
     local gold_before = wesnoth.sides[wesnoth.current.side].gold
 
     wesnoth.sync.invoke_command('GEAI_buy_upgrade', best_upgrade)
-
-    -- Set the variables that count how much gold has been spent on upgrades
-    if best_upgrade.is_essential then
-        data.upgrades_gold = data.upgrades_gold + best_upgrade.cost
-    else
-        data.upgrades_gold = data.turn_start_gold + 1 -- install only one non-essential upgrade
-    end
 
     local gold_after = wesnoth.sides[wesnoth.current.side].gold
     --std_print('gold before, after:', gold_before, gold_after)
