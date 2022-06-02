@@ -46,10 +46,10 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
     if false then -- this is just testing code to analyse the production of all the planets on the map
         local all_planets = UTLS.get_planets()
+        std_print('total food, gold')
         for _,planet in ipairs(all_planets) do
-            std_print('planet: ' .. UTLS.unit_str(planet))
             local total_food, total_gold = UTLS.total_production(planet)
-            std_print('  total food, gold: ' .. total_food, total_gold)
+            std_print(UTLS.unit_str(planet) .. ': ', total_food, total_gold)
         end
     end
     ------ End debug testing code ------
