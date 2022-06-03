@@ -154,8 +154,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
 
     ----- Headquarter and planet upgrades -----
-    local headquarters = UTLS.get_headquarters { side = wesnoth.current.side }
-    --std_print('#headquarters: ' .. #headquarters)
 
     -- Do these only once per call, otherwise it is pretty much guaranteed that there
     -- will be a value close to the maximum for each of these for one or several upgrades.
@@ -167,9 +165,9 @@ function ca_GE_upgrade:evaluation(cfg, data)
     local flagship_factor = UTLS.random_between(1, 2, skip_random)
 
     local max_rating = - math.huge
-    for _,hq in ipairs(headquarters) do
-        local planet = UTLS.get_planet_from_unit(hq)
-        --std_print('HQ: ' .. UTLS.unit_str(hq) .. ' <--> ' .. UTLS.unit_str(planet))
+    for _,planet in ipairs(my_planets) do
+        local hq = wesnoth.units.get(planet.variables.hq_x, planet.variables.hq_y)
+        std_print('HQ: ' .. UTLS.unit_str(hq) .. ' <--> ' .. UTLS.unit_str(planet))
 
         -- For the filter to work, the headquarter needs to be stored as 'hq' in WML
         -- and the planet in the 'planet' variable
