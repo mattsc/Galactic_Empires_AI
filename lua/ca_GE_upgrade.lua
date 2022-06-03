@@ -129,6 +129,29 @@ function ca_GE_upgrade:evaluation(cfg, data)
     local enemy_ships = UTLS.get_ships { { 'filter_side', { { 'enemy_of', {side = wesnoth.current.side } } } } }
     --std_print('    #enemy_ships: ' .. #enemy_ships)
 
+	-- Find frontier planets, defined as planets within 10 hexes of enemy-side planets
+	-- (excluding neutral planets) and their distances to the closest such enemy planet
+	local my_planets = UTLS.get_planets { side = wesnoth.current.side }
+	local enemy_planets = UTLS.get_planets {
+		{ 'filter_side', {
+			{ 'enemy_of', {side = wesnoth.current.side } },
+			{ 'has_unit', { canrecruit = 'yes' } }
+		} }
+	}
+	--std_print('#my_planets, #enemy_planets: ' .. #my_planets, #enemy_planets)
+
+	local frontier_planets = {}
+	for _,my_planet in ipairs(my_planets) do
+	    for _,enemy_planet in ipairs(enemy_planets) do
+	        local dist = wesnoth.map.distance_between(my_planet, enemy_planet)
+	        if (dist <= 10) and (dist < (frontier_planets[my_planet.id] or math.huge)) then
+	            --std_print(my_planet.id, enemy_planet.id, dist)
+	            frontier_planets[my_planet.id] = dist
+	        end
+	    end
+	end
+	--DBG.dbms(frontier_planets, false, 'frontier_planets')
+
 
     ----- Headquarter and planet upgrades -----
     local headquarters = UTLS.get_headquarters { side = wesnoth.current.side }
@@ -311,16 +334,6 @@ function ca_GE_upgrade:evaluation(cfg, data)
             end
         end
 
-        -- Find enemy-side planets (excluding neutral planets) within 6 hexes
-        local close_planets = UTLS.get_planets {
-            { 'filter_side', {
-                { 'enemy_of', {side = wesnoth.current.side } },
-                { 'has_unit', { canrecruit = 'yes' } }
-            } },
-            { 'filter_location', { x = planet.x, y = planet.y, radius = 6 } }
-        }
-        --std_print('    #close_planets: ' .. #close_planets)
-
 
         for planet_upgrade,cost in pairs(all_upgrades.planet) do
             local is_available = UPGRD.show_item(planet_upgrade)
@@ -355,9 +368,9 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     end
                 end
 
-                if (#close_ships >= 4) or (#close_planets > 0) then
+                if (#close_ships >= 4) or (frontier_planets[planet.id]) then
                     if string.find('spacedock/launch_pad/jammer/reflector', planet_upgrade) then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships), 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships) + 100 / frontier_planets[planet.id], 200, skip_random)
                     end
                 end
 
