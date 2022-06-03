@@ -368,7 +368,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
                 if (#close_ships >= 4) or (frontier_planets[planet.id]) then
                     if string.find('spacedock/launch_pad/jammer/reflector', planet_upgrade) then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * #close_ships + 100 / frontier_planets[planet.id], 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * #close_ships + 100 / (frontier_planets[planet.id] or 100), 200, skip_random)
                     end
                 end
 
