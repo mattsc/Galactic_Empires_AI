@@ -167,7 +167,7 @@ function ca_GE_upgrade:evaluation(cfg, data)
     local max_rating = - math.huge
     for _,planet in ipairs(my_planets) do
         local hq = wesnoth.units.get(planet.variables.hq_x, planet.variables.hq_y)
-        std_print('HQ: ' .. UTLS.unit_str(hq) .. ' <--> ' .. UTLS.unit_str(planet))
+        --std_print('HQ: ' .. UTLS.unit_str(hq) .. ' <--> ' .. UTLS.unit_str(planet))
 
         -- For the filter to work, the headquarter needs to be stored as 'hq' in WML
         -- and the planet in the 'planet' variable
@@ -237,11 +237,11 @@ function ca_GE_upgrade:evaluation(cfg, data)
                 local hq_rating = hq_base_rating
 
                 if (hq_upgrade == 'autofix_hq') and (hq.hitpoints < hq.max_hitpoints) then
-                    hq_rating = hq_rating + UTLS.random_between(2000 * (1 + #enemies / 10), nil, skip_random)
+                    hq_rating = hq_rating + UTLS.random_between(2000 + 200 * #enemies, nil, skip_random)
                 end
 
                 if (hq_upgrade == 'hospital') and (n_injured > 0) then
-                    hq_rating = hq_rating + UTLS.random_between(1000 * (1 + n_injured / 10) * (1 + #enemies / 10), nil, skip_random)
+                    hq_rating = hq_rating + UTLS.random_between(1000 + 100 * n_injured + 200 * #enemies, nil, skip_random)
                 end
 
                 if (hq_upgrade == 'barracks')
@@ -347,28 +347,28 @@ function ca_GE_upgrade:evaluation(cfg, data)
 
                 if (planet.hitpoints < planet.max_hitpoints) or with_antimatter_weapon then
                     if (planet_upgrade == 'gaiacology') then
-                        planet_rating = planet_rating + UTLS.random_between(1000 + 20 * (1 + #close_ships), nil, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(1000 + 200 * #close_ships, nil, skip_random)
                     end
                 end
 
                 if (#close_ships >= 2) then
                     if with_antimatter_weapon then
                         if (planet_upgrade == 'defence_laser') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships), 200, skip_random)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * #close_ships, 200, skip_random)
                         end
                     else
                         if (planet_upgrade == 'missile_base') then
-                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * (1 + #close_ships), 200, skip_random)
+                            planet_rating = planet_rating + UTLS.random_between(100 + 20 * #close_ships, 200, skip_random)
                         end
                     end
                     if (planet_upgrade == 'shields') then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships), 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * #close_ships, 200, skip_random)
                     end
                 end
 
                 if (#close_ships >= 4) or (frontier_planets[planet.id]) then
                     if string.find('spacedock/launch_pad/jammer/reflector', planet_upgrade) then
-                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * (1 + #close_ships) + 100 / frontier_planets[planet.id], 200, skip_random)
+                        planet_rating = planet_rating + UTLS.random_between(100 + 10 * #close_ships + 100 / frontier_planets[planet.id], 200, skip_random)
                     end
                 end
 
