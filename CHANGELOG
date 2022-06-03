@@ -1,3 +1,16 @@
+----- 0.3.0, 3 June 2022 -----
+
+- Upgrade CA:
+  - Allow more expensive upgrades (with a customizable probability)
+  - Rework the upgrade rating system:
+    - While the general priorities remain, the random contribution to selecting
+      between approximately equivalent upgrades is larger
+    - Completely ignore upgrades with negativ ratings
+    - A variety of minor rating changes, bug fixes, as well as code clean-up,
+      simplification and speed improvements
+- Utils: new function random_between
+
+
 ----- 0.2.0, 31 May 2022 -----
 
 - Transport troops CA:
@@ -6,7 +19,7 @@
   - Do not require more transports for colonising than there are neutral planets
   - Recruit new transports after all other transport actions, rather than before
 - Research CA bug fix: new ships are now correctly added to recruit list
-- Upgrades CA: add rating for new barracks upgrade
+- Upgrade CA: add rating for new barracks upgrade
 - Move ground CA: transports do no blockade planet any more as of GE 4.3
 - Population control CA: reduce bonus for soldiers when enemies are close
 - Misc. minor changes and bug fixes
