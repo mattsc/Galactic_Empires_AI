@@ -636,7 +636,7 @@ function ca_GE_upgrade:execution(cfg, data, ai_debug)
     if best_upgrade.is_expensive then str = str .. ' -- expensive' end
     DBG.print_debug_exec(ca_name, str)
     UTLS.output_add_move(str)
-    --wesnoth.message('S' .. wesnoth.current.side .. ' T' .. wesnoth.current.turn, str)
+    --wesnoth.interface.add_chat_message('S' .. wesnoth.current.side .. ' T' .. wesnoth.current.turn, str)
 
     -- Check whether gold changed, to prevent infinite loops in case something goes wrong
     local gold_before = wesnoth.sides[wesnoth.current.side].gold
