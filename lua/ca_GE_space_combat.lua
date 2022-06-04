@@ -152,9 +152,6 @@ function ca_GE_space_combat:evaluation(cfg, data, ai_debug)
     if (#ships > 0) then
         local valid_target_map = LS.create()
         local all_enemies = AH.get_attackable_enemies {
-            -- Note: there seems to be some bug in get_attackable_enemies()
-            -- If the probes are inside an [or] tag, they are visible even if they should not be
-            -- So for this to work, we need to place them first here
             type = 'Iildari Probe, Terran Probe',
             { 'or', {
                 ability = 'transport',
