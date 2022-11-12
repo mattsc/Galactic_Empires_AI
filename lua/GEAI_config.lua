@@ -60,6 +60,11 @@ local GEAI_cfg = {
             work_unit = 3.1,
             science_unit = 1,
             combat_unit =  1.4
+        },
+        Steelhive = {
+            work_unit = 3.1,
+            science_unit = 1,
+            combat_unit =  1
         }
     },
 

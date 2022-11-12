@@ -106,18 +106,21 @@ function ca_GE_research:execution(cfg, data, ai_debug)
             elseif (faction == 'Vendeeni') then allow_recruit.type = 'Vendeeni Stinger,Vendeeni Mite,Vendeeni Wasp'
             elseif (faction == 'Iildari') then allow_recruit.type = 'Iildari Explorer,Iildari Fighter,Iildari Battery'
             elseif (faction == 'Dwartha') then allow_recruit.type = 'Dwartha Driller,Dwartha Sweeper'
+            elseif (faction == 'Steelhive') then allow_recruit.type = 'Steelhive Oculus,Steelhive Infector,Steelhive Hedron'
             end
         elseif (unlock_tier == 2) then
             if (faction == 'Terran') then allow_recruit.type = 'Terran Probe,Terran Mechanic,Terran Seeker,Terran Interceptor,Terran Patrol,Terran Battleship'
             elseif (faction == 'Vendeeni') then allow_recruit.type = 'Vendeeni Clinger,Vendeeni Locust,Vendeeni Moth,Vendeeni Mayfly,Vendeeni War Wasp'
             elseif (faction == 'Iildari') then allow_recruit.type = 'Iildari Probe,Iildari Advanced Lookout,Iildari Advanced Explorer,Iildari Advanced Fighter,Iildari Advanced Battery'
             elseif (faction == 'Dwartha') then allow_recruit.type = 'Dwartha Pathfinder,Dwartha Rake,Dwartha Shifter,Dwartha Eliminator'
+            elseif (faction == 'Steelhive') then allow_recruit.type = 'Steelhive Spotter,Steelhive Sparkgazer,Steelhive Corruptor,Steelhive Choron,Steelhive Tridron'
             end
         elseif (unlock_tier == 3) then
             if (faction == 'Terran') then allow_recruit.type = 'Terran Ranger,Terran Striker,Terran Guardian,Terran Destroyer'
             elseif (faction == 'Vendeeni') then allow_recruit.type = 'Vendeeni Mantis,Vendeeni Hornet,Vendeeni Mosquito,Vendeeni Death Wasp'
             elseif (faction == 'Iildari') then allow_recruit.type = 'Iildari Elite Lookout,Iildari Elite Explorer,Iildari Elite Fighter,Iildari Elite Battery'
             elseif (faction == 'Dwartha') then allow_recruit.type = 'Dwartha Beltrunner,Dwartha Trident,Dwartha Displacer,Dwartha Annihilator'
+            elseif (faction == 'Steelhive') then allow_recruit.type = 'Steelhive Monitor,Steelhive Boltstriker,Steelhive Hexidron'
             end
         end
 
