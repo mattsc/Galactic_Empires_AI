@@ -260,6 +260,10 @@ function ca_GE_upgrade:evaluation(cfg, data)
                     hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
                 end
 
+                if (hq_upgrade == 'converter') then
+                    hq_rating = hq_rating + UTLS.random_between(100, 200, skip_random)
+                end
+
                 if (#enemies < 2) then
                     if (n_work >= 4) then
                         if (hq_upgrade == 'replicator')
