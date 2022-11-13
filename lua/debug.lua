@@ -2,7 +2,7 @@ local I = wesnoth.require "lua/wml/items.lua"
 
 local debug_cfg = {
     eval = false,
-    exec = true,
+    exec = false,
 }
 
 local debug_utils = {}
