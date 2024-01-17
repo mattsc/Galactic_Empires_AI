@@ -1,3 +1,9 @@
+----- 0.5.0, 16 January 2024 -----
+
+- Deprecate this modification, as the AI is now included in Galactic Empires
+  itself (as of GE 5.4)
+
+
 ----- 0.4.0, 13 November 2022 -----
 
 - Update AI to be able to play new Steelhive faction
